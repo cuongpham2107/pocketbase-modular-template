@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"ganigeorgiev.com/pocketbase/pocketbase"
+	"ganigeorgiev.com/pocketbase/pocketbase/apis"
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
-	"ganigeorgiev.com/pocketbase/pocketbase/ui"
 
 	"cuongpham2107/pocketbase-custom/internal/hooks"
 	"cuongpham2107/pocketbase-custom/internal/jobs"
@@ -14,20 +14,24 @@ import (
 )
 
 func main() {
-	// Trỏ PocketBase Admin Dashboard sang giao diện đã custom
-	ui.DistDirFS = os.DirFS("./custom-admin-ui/dist")
-
 	app := pocketbase.New()
 
-    hooks.Register(app)
-    jobs.Register(app)
+	hooks.Register(app)
+	jobs.Register(app)
 
-    app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-        routes.Register(se)
-        return se.Next()
-    })
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		// Đăng ký custom REST APIs (/api/custom/...)
+		routes.Register(se)
 
-    if err := app.Start(); err != nil {
-        log.Fatal(err)
-    }
+		// Phục vụ Admin Portal SPA tại /admin/ (nếu tồn tại)
+		if _, err := os.Stat("./pb_public/admin"); err == nil {
+			se.Router.GET("/admin/{path...}", apis.Static(os.DirFS("./pb_public/admin"), true))
+		}
+
+		return se.Next()
+	})
+
+	if err := app.Start(); err != nil {
+		log.Fatal(err)
+	}
 }

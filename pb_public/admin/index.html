@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Admin Portal — PocketBase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.3/pocketbase.umd.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+  <!-- Header -->
+  <header class="bg-indigo-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-lg shadow">PB</div>
+      <div>
+        <h1 class="text-base font-bold leading-tight" id="lbl-title">Business Admin Portal</h1>
+        <p class="text-xs text-indigo-200" id="lbl-subtitle">Quản trị nghiệp vụ & Custom Actions</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="btn-lang" onclick="toggleLang()" class="px-3 py-1.5 rounded-lg bg-indigo-800 hover:bg-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition">
+        <span id="lang-flag">🇻🇳</span> <span id="lang-text">Tiếng Việt</span>
+      </button>
+      <a href="/_/" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-xs font-medium text-indigo-100 flex items-center gap-1 transition">
+        <i class="ri-database-2-line"></i> PocketBase Studio
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900" id="lbl-orders">Quản lý Đơn hàng (Orders)</h2>
+        <p class="text-sm text-slate-500" id="lbl-orders-desc">Danh sách đơn hàng và các Custom Actions</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Custom Action Button -->
+        <button onclick="openQuickOrderModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow flex items-center gap-2 transition">
+          <i class="ri-flashlight-line"></i> <span id="btn-quick-order">⚡ Tạo nhanh đơn hàng (Custom Action)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+      <i class="ri-information-line text-indigo-600 text-xl mt-0.5"></i>
+      <div class="text-sm text-indigo-900 leading-relaxed">
+        <strong id="lbl-note-title">Mô hình kiến trúc mới:</strong>
+        <span id="lbl-note-body">
+          Trang này là <strong>Admin Portal nghiệp vụ riêng</strong> (đặt tại <code>/admin/</code>). Trang <strong>PocketBase Studio</strong> gốc dành cho Developer vẫn nằm nguyên vẹn tại <code>/_/</code>.
+        </span>
+      </div>
+    </div>
+
+    <!-- Orders Table Container -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <span class="text-sm font-semibold text-slate-700" id="lbl-table-header">Danh sách đơn hàng gần đây</span>
+        <button onclick="loadOrders()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+          <i class="ri-refresh-line"></i> <span id="btn-reload">Làm mới</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100/75 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">Mã đơn</th>
+              <th class="px-4 py-3">Khách hàng</th>
+              <th class="px-4 py-3">Tổng tiền</th>
+              <th class="px-4 py-3">Trạng thái</th>
+              <th class="px-4 py-3">Thời gian</th>
+              <th class="px-4 py-3 text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                Đang tải dữ liệu đơn hàng từ PocketBase...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Quick Order Modal -->
+  <div id="modal-quick-order" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="ri-flashlight-line text-emerald-600"></i>
+          <span id="lbl-modal-title">Custom Action: Tạo nhanh đơn hàng</span>
+        </h3>
+        <button onclick="closeQuickOrderModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+      <form id="form-quick-order" onsubmit="handleQuickOrder(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1" id="lbl-cust-name">Tên khách hàng *</label>
+          <input type="text" id="cust-name" required placeholder="vd: Nguyễn Văn A" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1" id="lbl-cust-total">Tổng tiền (VNĐ) *</label>
+          <input type="number" id="cust-total" required value="250000" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1" id="lbl-cust-addr">Địa chỉ giao hàng</label>
+          <input type="text" id="cust-addr" placeholder="vd: 123 Cầu Giấy, Hà Nội" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeQuickOrderModal()" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition" id="btn-cancel">Hủy</button>
+          <button type="submit" id="btn-submit" class="px-5 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow transition flex items-center gap-1.5">
+            <i class="ri-check-line"></i> <span id="btn-submit-text">Tạo đơn</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const pb = new PocketBase(window.location.origin);
+    let currentLang = localStorage.getItem("admin_portal_lang") || "vi";
+
+    const dict = {
+      vi: {
+        title: "Business Admin Portal",
+        subtitle: "Quản trị nghiệp vụ & Custom Actions",
+        orders: "Quản lý Đơn hàng (Orders)",
+        ordersDesc: "Danh sách đơn hàng và các Custom Actions",
+        quickOrder: "⚡ Tạo nhanh đơn hàng (Custom Action)",
+        tableHeader: "Danh sách đơn hàng gần đây",
+        reload: "Làm mới",
+        empty: "Chưa có đơn hàng nào trong bảng 'orders'. Hãy thử bấm nút 'Tạo nhanh đơn hàng'!",
+        modalTitle: "Custom Action: Tạo nhanh đơn hàng",
+        custName: "Tên khách hàng *",
+        custTotal: "Tổng tiền (VNĐ) *",
+        custAddr: "Địa chỉ giao hàng",
+        cancel: "Hủy",
+        submit: "Tạo đơn",
+        noteTitle: "Mô hình kiến trúc mới:",
+        noteBody: "Trang này là Admin Portal nghiệp vụ riêng (tại /admin/). PocketBase Studio gốc dành cho Developer vẫn nằm nguyên vẹn tại /_/."
+      },
+      en: {
+        title: "Business Admin Portal",
+        subtitle: "Business Operations & Custom Actions",
+        orders: "Order Management",
+        ordersDesc: "Orders list and Custom Actions",
+        quickOrder: "⚡ Quick Create Order (Custom Action)",
+        tableHeader: "Recent Orders",
+        reload: "Reload",
+        empty: "No orders found in 'orders' table. Try clicking 'Quick Create Order'!",
+        modalTitle: "Custom Action: Quick Create Order",
+        custName: "Customer Name *",
+        custTotal: "Total Amount (VND) *",
+        custAddr: "Shipping Address",
+        cancel: "Cancel",
+        submit: "Create Order",
+        noteTitle: "New Architecture Pattern:",
+        noteBody: "This is a dedicated Business Admin Portal (at /admin/). The original PocketBase Dev Studio remains untouched at /_/."
+      }
+    };
+
+    function applyLang() {
+      const d = dict[currentLang];
+      document.getElementById("lbl-title").textContent = d.title;
+      document.getElementById("lbl-subtitle").textContent = d.subtitle;
+      document.getElementById("lbl-orders").textContent = d.orders;
+      document.getElementById("lbl-orders-desc").textContent = d.ordersDesc;
+      document.getElementById("btn-quick-order").textContent = d.quickOrder;
+      document.getElementById("lbl-table-header").textContent = d.tableHeader;
+      document.getElementById("btn-reload").textContent = d.reload;
+      document.getElementById("lbl-modal-title").textContent = d.modalTitle;
+      document.getElementById("lbl-cust-name").textContent = d.custName;
+      document.getElementById("lbl-cust-total").textContent = d.custTotal;
+      document.getElementById("lbl-cust-addr").textContent = d.custAddr;
+      document.getElementById("btn-cancel").textContent = d.cancel;
+      document.getElementById("btn-submit-text").textContent = d.submit;
+      document.getElementById("lbl-note-title").textContent = d.noteTitle;
+      document.getElementById("lbl-note-body").textContent = d.noteBody;
+
+      document.getElementById("lang-flag").textContent = currentLang === "vi" ? "🇻🇳" : "🇬🇧";
+      document.getElementById("lang-text").textContent = currentLang === "vi" ? "Tiếng Việt" : "English";
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === "vi" ? "en" : "vi";
+      localStorage.setItem("admin_portal_lang", currentLang);
+      applyLang();
+      loadOrders();
+    }
+
+    async function loadOrders() {
+      const tbody = document.getElementById("orders-tbody");
+      try {
+        const records = await pb.collection("orders").getList(1, 20, { sort: "-created" });
+        if (records.items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">${dict[currentLang].empty}</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = records.items.map(order => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-4 py-3 font-mono font-medium text-indigo-600">${order.code || order.id.slice(0, 8)}</td>
+            <td class="px-4 py-3 font-medium text-slate-800">${order.customer || "N/A"}</td>
+            <td class="px-4 py-3 font-semibold text-slate-900">${Number(order.total || 0).toLocaleString("vi-VN")} đ</td>
+            <td class="px-4 py-3">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${order.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                ${order.status || 'pending'}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-500 text-xs">${new Date(order.created).toLocaleString()}</td>
+            <td class="px-4 py-3 text-right">
+              <button onclick="confirmOrder('${order.id}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition">
+                Duyệt đơn
+              </button>
+            </td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">
+          Chưa kết nối bảng 'orders' hoặc chưa đăng nhập. (Lỗi: ${err.message})
+        </td></tr>`;
+      }
+    }
+
+    function openQuickOrderModal() {
+      document.getElementById("modal-quick-order").classList.remove("hidden");
+    }
+
+    function closeQuickOrderModal() {
+      document.getElementById("modal-quick-order").classList.add("hidden");
+    }
+
+    async function handleQuickOrder(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById("btn-submit");
+      submitBtn.disabled = true;
+
+      try {
+        // Gọi Custom Action Endpoint phía Backend Go
+        const res = await pb.send("/api/custom/orders/create", {
+          method: "POST",
+          body: {
+            customerName: document.getElementById("cust-name").value,
+            total: Number(document.getElementById("cust-total").value),
+            shippingAddress: document.getElementById("cust-addr").value,
+            notes: "Tạo từ Quick Action Button"
+          }
+        });
+
+        alert("🎉 Tạo đơn hàng thành công qua Custom Action!");
+        closeQuickOrderModal();
+        document.getElementById("form-quick-order").reset();
+        loadOrders();
+      } catch (err) {
+        alert("Lỗi: " + (err.data?.message || err.message));
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    async function confirmOrder(id) {
+      try {
+        await pb.send(`/api/custom/orders/${id}/confirm`, { method: "POST" });
+        alert("Đã duyệt đơn hàng thành công!");
+        loadOrders();
+      } catch (err) {
+        alert("Lỗi: " + err.message);
+      }
+    }
+
+    applyLang();
+    loadOrders();
+  </script>
+</body>
+</html>

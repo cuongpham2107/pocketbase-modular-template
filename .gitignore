@@ -1,4 +1,5 @@
 tmp/
 pb_data/
-custom-admin-ui/node_modules/
 .codegraph/
+frontend-admin/node_modules/
+frontend-admin/dist/
