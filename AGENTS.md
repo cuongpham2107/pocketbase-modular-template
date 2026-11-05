@@ -69,6 +69,7 @@ pocket-base/
 ├── migrations/                 # File-based Go migrations
 ├── .codegraph/                 # CodeGraph knowledge graph index
 ├── .air.toml                   # Live hot-reload config cho Go backend
+├── Makefile                    # Điều khiển toàn bộ dự án (make dev, make run, make build...)
 └── go.mod / go.sum             # Go module dependencies
 ```
 
@@ -76,30 +77,54 @@ pocket-base/
 
 ## 3. Lệnh Phát Triển Chính (Key Commands)
 
-### Backend (Go)
+Dự án sử dụng **`Makefile`** để điều khiển toàn bộ quy trình phát triển và build:
+
+### Điều khiển qua Makefile (Khuyên Dùng)
 ```bash
-# Khởi động server hot-reload (khuyên dùng khi phát triển)
+# Xem danh sách tất cả các lệnh hỗ trợ
+make help
+
+# Chạy song song cả Go Backend (hot-reload) và Frontend React (Vite HMR)
+make dev
+
+# Build frontend rồi chạy PocketBase nguyên khối tích hợp tại cổng 8090
+make run    # hoặc make serve
+
+# Build toàn bộ project (React Frontend + Go Backend binary)
+make build
+
+# Cài đặt dependencies cho cả Go và Frontend
+make install
+
+# Dọn dẹp thư mục tạm tmp/
+make clean
+
+# Đồng bộ CodeGraph index
+make sync
+```
+
+### Chạy Thủ Công Từng Phần (Nếu Cần)
+
+#### Backend (Go)
+```bash
+# Khởi động server hot-reload với Air
 air
 
 # Chạy server thủ công
 go run . serve --dev --dir=./pb_data
 
-# Biên dịch binary sản phẩm
+# Biên dịch binary
 go build -o tmp/main .
-
-# Đồng bộ & dọn dẹp Go dependencies
-go mod tidy
 ```
 
-### Frontend Admin (React + Vite + Tailwind)
+#### Frontend Admin (React + Vite + Tailwind)
 ```bash
-# Di chuyển vào thư mục frontend
 cd frontend-admin
 
-# Chạy dev server với hot-reload (cổng 5173, proxy API sang 8090)
+# Dev server cổng 5173
 npm run dev
 
-# Build production trực tiếp vào pb_public/admin/
+# Build ra pb_public/admin/
 npm run build
 ```
 

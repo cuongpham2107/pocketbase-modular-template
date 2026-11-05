@@ -16,3 +16,4 @@ export function isAuthenticated() {
 export function logout() {
   pb.authStore.clear();
 }
+
