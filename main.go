@@ -25,6 +25,9 @@ func main() {
 
 		// Phục vụ Admin Portal SPA tại /admin/ (nếu tồn tại)
 		if _, err := os.Stat("./pb_public/admin"); err == nil {
+			se.Router.GET("/admin", func(e *core.RequestEvent) error {
+				return e.Redirect(307, "/admin/")
+			})
 			se.Router.GET("/admin/{path...}", apis.Static(os.DirFS("./pb_public/admin"), true))
 		}
 

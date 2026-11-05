@@ -56,8 +56,15 @@ pocket-base/
 │   ├── hooks/                  # Record/Model lifecycle hooks (internal/hooks/hooks.go)
 │   ├── jobs/                   # Background Cron jobs (internal/jobs/jobs.go)
 │   └── middleware/             # Custom HTTP middlewares
+├── frontend-admin/             # React + Vite + Tailwind + shadcn UI source code
+│   ├── src/
+│   │   ├── pages/              # Login (/login), Register (/register), Dashboard (/ & /dashboard)
+│   │   ├── components/ui/      # shadcn UI components (Button, Input, Card, Badge, Label)
+│   │   └── lib/                # pocketbase client singleton & helpers
+│   ├── vite.config.ts          # Build ra pb_public/admin/ với base "/admin/"
+│   └── package.json
 ├── pb_public/                  # Static frontend files served bởi PocketBase
-│   └── admin/                  # Business Admin Portal (truy cập tại http://127.0.0.1:8090/admin/)
+│   └── admin/                  # Business Admin Portal đã build (truy cập tại http://127.0.0.1:8090/admin/)
 ├── pb_data/                    # SQLite database files (ignored in git and air)
 ├── migrations/                 # File-based Go migrations
 ├── .codegraph/                 # CodeGraph knowledge graph index
@@ -82,6 +89,18 @@ go build -o tmp/main .
 
 # Đồng bộ & dọn dẹp Go dependencies
 go mod tidy
+```
+
+### Frontend Admin (React + Vite + Tailwind)
+```bash
+# Di chuyển vào thư mục frontend
+cd frontend-admin
+
+# Chạy dev server với hot-reload (cổng 5173, proxy API sang 8090)
+npm run dev
+
+# Build production trực tiếp vào pb_public/admin/
+npm run build
 ```
 
 ### Code Intelligence (CodeGraph)
