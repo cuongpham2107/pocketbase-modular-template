@@ -23,6 +23,16 @@ func main() {
 		// Đăng ký custom REST APIs (/api/custom/...)
 		routes.Register(se)
 
+		// Redirect root / sang /admin/
+		se.Router.GET("/", func(e *core.RequestEvent) error {
+			return e.Redirect(307, "/admin/")
+		})
+
+		// Tránh log lỗi 404 cho favicon
+		se.Router.GET("/favicon.ico", func(e *core.RequestEvent) error {
+			return e.NoContent(204)
+		})
+
 		// Phục vụ Admin Portal SPA tại /admin/ (nếu tồn tại)
 		if _, err := os.Stat("./pb_public/admin"); err == nil {
 			se.Router.GET("/admin", func(e *core.RequestEvent) error {

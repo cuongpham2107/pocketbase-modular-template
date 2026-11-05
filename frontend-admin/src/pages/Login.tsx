@@ -20,11 +20,45 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Xác thực người dùng qua PocketBase auth collection
-      await pb.collection("users").authWithPassword(email, password)
+      let authenticated = false
+      let lastErrorMessage = ""
+
+      // 1. Thử xác thực với _superusers (Tài khoản Developer / Superuser tạo tại /_/)
+      try {
+        await pb.collection("_superusers").authWithPassword(email, password)
+        authenticated = true
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          lastErrorMessage = err.message
+        }
+      }
+
+      // 2. Nếu không phải superuser, thử xác thực với collection users (Nhân viên / Khách hàng)
+      if (!authenticated) {
+        try {
+          await pb.collection("users").authWithPassword(email, password)
+          authenticated = true
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            lastErrorMessage = err.message
+          }
+        }
+      }
+
+      if (!authenticated) {
+        throw new Error(
+          lastErrorMessage.includes("invalid login credentials")
+            ? "Email hoặc mật khẩu không chính xác."
+            : "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản/mật khẩu."
+        )
+      }
+
       navigate("/")
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản/mật khẩu."
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản/mật khẩu."
       setError(message)
     } finally {
       setIsLoading(false)
@@ -40,7 +74,7 @@ export function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Business Admin Portal</CardTitle>
           <CardDescription>
-            Đăng nhập vào hệ thống quản trị và xử lý nghiệp vụ
+            Đăng nhập bằng tài khoản Superuser hoặc Nhân viên
           </CardDescription>
         </CardHeader>
 

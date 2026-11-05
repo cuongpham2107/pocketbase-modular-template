@@ -169,7 +169,11 @@ export function DashboardPage() {
 
             <div className="text-right hidden md:block">
               <div className="text-sm font-medium">{currentUser?.name || currentUser?.email}</div>
-              <div className="text-xs text-muted-foreground">Admin / Quản trị viên</div>
+              <div className="text-xs text-muted-foreground">
+                {currentUser?.collectionName === "_superusers"
+                  ? "👑 Superuser (Toàn quyền)"
+                  : "Quản trị viên / Nhân viên"}
+              </div>
             </div>
 
             <Button variant="outline" size="sm" onClick={handleLogout} className="gap-1.5">

@@ -39,9 +39,9 @@ Dự án này sử dụng mô hình **BaaS + Dedicated Business Portal** thay v�
 └──────────────────────────────────────┘  └───────────────────────────────────┘
 ```
 
-* **Module Name:** `cuongpham2107/pocketbase-custom` (Go 1.27+)
-* **Framework:** PocketBase (`ganigeorgiev.com/pocketbase/pocketbase v0.41.1`)
-* **Database:** SQLite (embedded via modernc.org/sqlite), lưu trữ tại `./pb_data/`.
+- **Module Name:** `cuongpham2107/pocketbase-custom` (Go 1.27+)
+- **Framework:** PocketBase (`ganigeorgiev.com/pocketbase/pocketbase v0.41.1`)
+- **Database:** SQLite (embedded via modernc.org/sqlite), lưu trữ tại `./pb_data/`.
 
 ---
 
@@ -77,9 +77,11 @@ pocket-base/
 
 ## 3. Lệnh Phát Triển Chính (Key Commands)
 
+
 Dự án sử dụng **`Makefile`** để điều khiển toàn bộ quy trình phát triển và build:
 
 ### Điều khiển qua Makefile (Khuyên Dùng)
+
 ```bash
 # Xem danh sách tất cả các lệnh hỗ trợ
 make help
@@ -106,6 +108,7 @@ make sync
 ### Chạy Thủ Công Từng Phần (Nếu Cần)
 
 #### Backend (Go)
+
 ```bash
 # Khởi động server hot-reload với Air
 air
@@ -117,7 +120,9 @@ go run . serve --dev --dir=./pb_data
 go build -o tmp/main .
 ```
 
+
 #### Frontend Admin (React + Vite + Tailwind)
+
 ```bash
 cd frontend-admin
 
@@ -129,6 +134,7 @@ npm run build
 ```
 
 ### Code Intelligence (CodeGraph)
+
 ```bash
 # Đồng bộ CodeGraph index sau khi sửa code
 codegraph sync
@@ -138,18 +144,21 @@ codegraph explore "<symbol or query>"
 ```
 
 ### Nâng cấp PocketBase Upstream
+
 ```bash
 # Cập nhật thư viện Go lên bản mới nhất
 go get ganigeorgiev.com/pocketbase/pocketbase@latest
 go mod tidy
 ```
-*(Không còn phải lo lắng về việc merge code hay xung đột giao diện, vì trang `/_/` dùng 100% bản gốc của PocketBase!)*
+
+_(Không còn phải lo lắng về việc merge code hay xung đột giao diện, vì trang `/_/` dùng 100% bản gốc của PocketBase!)_
 
 ---
 
 ## 4. Quy tắc Thiết kế & Lập trình (Coding Guidelines)
 
 ### Backend Rules
+
 1. **Module Import Paths:** Luôn dùng `cuongpham2107/pocketbase-custom/...` (không dùng relative parent paths hoặc tên cũ).
 2. **PocketBase Import:** Dùng `ganigeorgiev.com/pocketbase/pocketbase` và `ganigeorgiev.com/pocketbase/pocketbase/core`.
 3. **Data Safety & Persistence:** Luôn chạy với cờ `--dir=./pb_data` để dữ liệu SQLite nằm cố định ở `./pb_data/` (không để trong `tmp/`).
@@ -167,12 +176,15 @@ go mod tidy
    ```
 
 ### Frontend Rules
+
 1. **PocketBase Studio (`/_/`):** Để nguyên bản gốc bằng tiếng Anh cho lập trình viên quản trị schema, collection, file storage.
 2. **Business Admin Portal (`/admin/`):** Tự do thiết kế giao diện theo yêu cầu doanh nghiệp, tích hợp nút Custom Action và hệ thống đa ngôn ngữ (i18n).
 
 ### File Watchers & Git Exclusions
+
 Tuyệt đối **KHÔNG** theo dõi hay commit lên git:
-* `tmp/`
-* `pb_data/`
-* `.codegraph/`
-* `node_modules/`
+
+- `tmp/`
+- `pb_data/`
+- `.codegraph/`
+- `node_modules/`
