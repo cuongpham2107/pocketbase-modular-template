@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "react",
+    "typescript",
+    "oxc"
+  ],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+      ],
+      "rules": {
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "fetch",
+            "message": "Chỉ gọi fetch trong src/lib/api.ts hoặc src/lib/session.ts (để giữ credentials, refresh và xử lý lỗi tập trung)."
+          }
+        ]
+      },
+      "excludeFiles": [
+        "src/lib/api.ts",
+        "src/lib/session.ts",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx"
+      ]
+    },
+    {
+      "files": [
+        "src/components/ui/**"
+      ],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    }
+  ]
+}

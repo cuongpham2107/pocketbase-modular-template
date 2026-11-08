@@ -49,18 +49,21 @@ Dự án này sử dụng mô hình **BaaS + Dedicated Business Portal** thay v�
 
 ```
 pocket-base/
-├── main.go                     # Entrypoint: Khởi tạo PocketBase, hooks, jobs, và routes
+├── main.go                     # Entrypoint: Khởi tạo PocketBase, hooks, jobs, rbac, và routes
 ├── internal/
-│   ├── routes/                 # Custom HTTP REST endpoints (internal/routes/routes.go)
+│   ├── rbac/                   # Phân quyền động: Catalog, Register Collections, Sync, Service
+│   ├── routes/                 # REST endpoints: /api/v1 (auth, rbac, users) và /api/custom
 │   ├── services/               # Nghiệp vụ xử lý (internal/services/order.go)
 │   ├── hooks/                  # Record/Model lifecycle hooks (internal/hooks/hooks.go)
 │   ├── jobs/                   # Background Cron jobs (internal/jobs/jobs.go)
 │   └── middleware/             # Custom HTTP middlewares
-├── frontend-admin/             # React + Vite + Tailwind + shadcn UI source code
+├── frontend-admin/             # React 19 + Tailwind v4 + shadcn UI + Radix UI + i18n
 │   ├── src/
-│   │   ├── pages/              # Login (/login), Register (/register), Dashboard (/ & /dashboard)
-│   │   ├── components/ui/      # shadcn UI components (Button, Input, Card, Badge, Label)
-│   │   └── lib/                # pocketbase client singleton & helpers
+│   │   ├── features/           # auth, rbac, users, theme, dashboard, audit, notifications, media
+│   │   ├── components/layout/  # AppSidebar, PageShell, PageHeader, PageCard
+│   │   ├── components/ui/      # shadcn UI components (Radix primitives)
+│   │   ├── locales/            # Đa ngôn ngữ (vi, en)
+│   │   └── lib/                # api.ts (cổng gọi API), session.ts, permissions.ts, modules.ts
 │   ├── vite.config.ts          # Build ra pb_public/admin/ với base "/admin/"
 │   └── package.json
 ├── pb_public/                  # Static frontend files served bởi PocketBase

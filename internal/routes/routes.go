@@ -8,6 +8,9 @@ import (
 )
 
 func Register(se *core.ServeEvent) {
+	// Đăng ký REST API v1 cho frontend (auth, rbac, users, modules)
+	RegisterV1(se)
+
 	orders := services.NewOrderService(se.App)
 
 	g := se.Router.Group("/api/custom")

@@ -10,6 +10,7 @@ import (
 
 	"cuongpham2107/pocketbase-custom/internal/hooks"
 	"cuongpham2107/pocketbase-custom/internal/jobs"
+	"cuongpham2107/pocketbase-custom/internal/rbac"
 	"cuongpham2107/pocketbase-custom/internal/routes"
 )
 
@@ -18,6 +19,25 @@ func main() {
 
 	hooks.Register(app)
 	jobs.Register(app)
+
+	// Khởi tạo và đồng bộ RBAC Collections khi khởi động
+	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+
+		if err := rbac.RegisterCollections(e.App); err != nil {
+			log.Printf("[RBAC] Register collections error: %v", err)
+			return err
+		}
+
+		if err := rbac.SyncCatalog(e.App); err != nil {
+			log.Printf("[RBAC] Sync catalog error: %v", err)
+			return err
+		}
+
+		return nil
+	})
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// Đăng ký custom REST APIs (/api/custom/...)

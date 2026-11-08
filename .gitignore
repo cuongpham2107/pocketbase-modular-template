@@ -3,3 +3,7 @@ pb_data/
 .codegraph/
 frontend-admin/node_modules/
 frontend-admin/dist/
+pocketbase-custom
+*.exe
+*.test
+
