@@ -1,0 +1,25 @@
+services:
+  pocketbase:
+    container_name: pocketbase-custom
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8090}:8090"
+    environment:
+      TZ: "${TZ:-Asia/Ho_Chi_Minh}"
+      PB_DEV: "${PB_DEV:-false}"
+      PB_DATA_DIR: /app/pb_data
+      PB_HTTP_ADDR: 0.0.0.0:8090
+      PB_ADMIN_EMAIL: "${PB_ADMIN_EMAIL:-}"
+      PB_ADMIN_PASSWORD: "${PB_ADMIN_PASSWORD:-}"
+    volumes:
+      - ../pb_data:/app/pb_data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+

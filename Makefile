@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev run serve build build-frontend build-backend install clean sync
+.PHONY: help dev run serve build build-frontend build-backend install clean sync docker-build docker-up docker-down docker-logs
 
 # Colors for terminal output
 CYAN   := \033[36m
@@ -27,6 +27,12 @@ help:
 	@echo "  $(YELLOW)make install$(RESET)        Cài đặt đầy đủ dependencies (Go modules + npm packages)"
 	@echo "  $(YELLOW)make clean$(RESET)          Dọn dẹp thư mục tạm tmp/"
 	@echo "  $(YELLOW)make sync$(RESET)           Đồng bộ CodeGraph knowledge graph"
+	@echo ""
+	@echo "$(GREEN)Các lệnh Docker (.docker/):$(RESET)"
+	@echo "  $(YELLOW)make docker-build$(RESET)   Build Docker image (multi-stage: React + Go)"
+	@echo "  $(YELLOW)make docker-up$(RESET)      Khởi chạy container ngầm (docker compose up -d)"
+	@echo "  $(YELLOW)make docker-down$(RESET)    Dừng và gỡ bỏ container"
+	@echo "  $(YELLOW)make docker-logs$(RESET)    Xem log realtime của container"
 	@echo ""
 	@echo "$(CYAN)Địa chỉ truy cập khi chạy:$(RESET)"
 	@echo "  - Backend Dev Studio : $(GREEN)http://127.0.0.1:8090/_/$(RESET)"
@@ -85,4 +91,25 @@ clean:
 ## sync: Đồng bộ CodeGraph
 sync:
 	@codegraph sync
+
+## docker-build: Build Docker image từ .docker/docker-compose.yml
+docker-build:
+	@echo "$(YELLOW)🐳 Đang build Docker image (React + Go)...$(RESET)"
+	@docker compose -f .docker/docker-compose.yml build
+
+## docker-up: Khởi chạy ứng dụng trong Docker container
+docker-up:
+	@echo "$(GREEN)🐳 Đang khởi chạy PocketBase Custom trong Docker...$(RESET)"
+	@docker compose -f .docker/docker-compose.yml up -d
+	@echo "$(GREEN)✅ Đã chạy tại http://127.0.0.1:8090/admin/$(RESET)"
+
+## docker-down: Dừng Docker container
+docker-down:
+	@echo "$(YELLOW)🛑 Đang dừng Docker container...$(RESET)"
+	@docker compose -f .docker/docker-compose.yml down
+
+## docker-logs: Xem log của Docker container
+docker-logs:
+	@docker compose -f .docker/docker-compose.yml logs -f
+
 

@@ -6,4 +6,6 @@ frontend-admin/dist/
 pocketbase-custom
 *.exe
 *.test
+.docker/.env
+
 

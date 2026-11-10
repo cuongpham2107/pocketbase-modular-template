@@ -1,0 +1,19 @@
+# Git & IDE
+.git
+.gitignore
+.vscode
+.idea
+.codegraph
+
+# Local runtime & build artifacts
+pb_data/
+tmp/
+pocketbase-custom
+*.exe
+*.test
+
+# Frontend dependencies (rebuilt cleanly in frontend-builder stage)
+frontend-admin/node_modules/
+frontend-admin/dist/
+pb_public/admin/
+
