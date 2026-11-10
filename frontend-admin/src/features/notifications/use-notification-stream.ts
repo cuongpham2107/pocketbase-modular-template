@@ -27,10 +27,10 @@ function streamUrl(): string | null {
 }
 
 function isNotification(value: unknown): value is Notification {
+  if (typeof value !== "object" || value === null) return false
+  const id = (value as { id?: unknown }).id
   return (
-    typeof value === "object" &&
-    value !== null &&
-    typeof (value as { id?: unknown }).id === "number" &&
+    (typeof id === "number" || typeof id === "string") &&
     typeof (value as { title?: unknown }).title === "string"
   )
 }

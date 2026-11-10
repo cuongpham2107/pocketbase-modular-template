@@ -44,32 +44,41 @@ func (s service) Create(userID string, in CreateInput) (*core.Record, error) {
 	if in.Total < 0 {
 		return nil, ErrNegativeTotal
 	}
-	col, err := s.app.FindCollectionByNameOrId("orders")
-	if err != nil {
-		return nil, err
-	}
-	rec := core.NewRecord(col)
-	rec.Set("code", newCode(time.Now()))
-	rec.Set("customer", customer)
-	rec.Set("total", in.Total)
-	rec.Set("status", StatusPending)
-	rec.Set("shippingAddress", strings.TrimSpace(in.ShippingAddress))
-	rec.Set("notes", strings.TrimSpace(in.Notes))
-	rec.Set("user", userID)
-	return rec, s.app.Save(rec)
+	var rec *core.Record
+	err := s.app.RunInTransaction(func(tx core.App) error {
+		col, err := tx.FindCollectionByNameOrId("orders")
+		if err != nil {
+			return err
+		}
+		rec = core.NewRecord(col)
+		rec.Set("code", newCode(time.Now()))
+		rec.Set("customer", customer)
+		rec.Set("total", in.Total)
+		rec.Set("status", StatusPending)
+		rec.Set("shippingAddress", strings.TrimSpace(in.ShippingAddress))
+		rec.Set("notes", strings.TrimSpace(in.Notes))
+		rec.Set("user", userID)
+		return tx.Save(rec)
+	})
+	return rec, err
 }
 
-// Confirm moves a pending order to confirmed.
+// Confirm moves a pending order to confirmed atomically inside a transaction.
 func (s service) Confirm(id string) (*core.Record, error) {
-	rec, err := s.app.FindRecordById("orders", id)
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	if rec.GetString("status") != StatusPending {
-		return nil, ErrNotPending
-	}
-	rec.Set("status", StatusConfirmed)
-	return rec, s.app.Save(rec)
+	var rec *core.Record
+	err := s.app.RunInTransaction(func(tx core.App) error {
+		var err error
+		rec, err = tx.FindRecordById("orders", id)
+		if err != nil {
+			return ErrNotFound
+		}
+		if rec.GetString("status") != StatusPending {
+			return ErrNotPending
+		}
+		rec.Set("status", StatusConfirmed)
+		return tx.Save(rec)
+	})
+	return rec, err
 }
 
 func (s service) List(limit, offset int) ([]*core.Record, int64, error) {

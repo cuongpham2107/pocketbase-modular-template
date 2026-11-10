@@ -1,4 +1,4 @@
-// Package media declares media permissions and the file-manager endpoints the frontend calls.
+// Package media provides folder tree management and file storage backed by PocketBase's filesystem.
 package media
 
 import (
@@ -7,7 +7,6 @@ import (
 	"ganigeorgiev.com/pocketbase/pocketbase/tools/router"
 
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
-	"cuongpham2107/pocketbase-custom/internal/platform/httpx"
 	"cuongpham2107/pocketbase-custom/internal/platform/module"
 )
 
@@ -28,10 +27,21 @@ var Module = module.Module{
 	Routes: routes,
 }
 
-// ponytail: stubs returning empty lists; back them with a "files" collection when the media feature is built.
 func routes(api *router.RouterGroup[*core.RequestEvent], app core.App) {
-	empty := func(e *core.RequestEvent) error { return httpx.OK(e, 200, []any{}) }
-	g := api.Group("/files").Bind(apis.RequireAuth(), rbac.Require(PermView))
-	g.GET("", empty)
-	g.GET("/folders/tree", empty)
+	h := handler{svc: service{app: app}}
+	g := api.Group("/files").Bind(apis.RequireAuth())
+
+	// Files CRUD & operations
+	g.GET("", h.listFiles).Bind(rbac.Require(PermView))
+	g.POST("/upload", h.uploadFile).Bind(rbac.Require(PermUpload))
+	g.POST("/move", h.moveFiles).Bind(rbac.Require(PermUpload))
+	g.PATCH("/{id}", h.renameFile).Bind(rbac.Require(PermUpload))
+	g.POST("/{id}/copy", h.copyFile).Bind(rbac.Require(PermUpload))
+	g.DELETE("/{id}", h.deleteFile).Bind(rbac.Require(PermDelete))
+
+	// Folder Tree CRUD
+	g.GET("/folders/tree", h.folderTree).Bind(rbac.Require(PermView))
+	g.POST("/folders", h.createFolder).Bind(rbac.Require(PermUpload))
+	g.PUT("/folders/{id}", h.updateFolder).Bind(rbac.Require(PermUpload))
+	g.DELETE("/folders/{id}", h.deleteFolder).Bind(rbac.Require(PermDelete))
 }

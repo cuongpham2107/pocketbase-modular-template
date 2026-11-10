@@ -35,6 +35,18 @@ func toItem(r *core.Record) item {
 	}
 }
 
+func (h handler) create(e *core.RequestEvent) error {
+	var in CreateInput
+	if err := e.BindBody(&in); err != nil {
+		return httpx.BadRequest(e)
+	}
+	rec, err := h.svc.Create(in)
+	if err != nil {
+		return httpx.Fail(e, 400, "VALIDATION_FAILED", err.Error())
+	}
+	return httpx.OK(e, 201, toItem(rec))
+}
+
 func (h handler) list(e *core.RequestEvent) error {
 	p := httpx.ParsePage(e, 20)
 	u := e.Request.URL.Query().Get("unread")

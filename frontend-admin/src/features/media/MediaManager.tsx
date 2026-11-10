@@ -70,7 +70,7 @@ const FOLDER_COLORS = [
   { label: "Xám Bạc", hex: "#64748b", bg: "bg-slate-500/15 text-slate-500 border-slate-500/30" },
 ]
 
-function findFolder(nodes: MediaFolder[], id: number): MediaFolder | null {
+function findFolder(nodes: MediaFolder[], id: string | number): MediaFolder | null {
   for (const node of nodes) {
     if (node.id === id) return node
     if (node.children && node.children.length > 0) {
@@ -90,34 +90,34 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
   const [loadingFiles, setLoadingFiles] = React.useState(true)
 
   // State: Điều hướng thư mục & Bộ lọc
-  const [selectedFolderId, setSelectedFolderId] = React.useState<number | null>(null)
+  const [selectedFolderId, setSelectedFolderId] = React.useState<string | number | null>(null)
   const [activeTypeFilter, setActiveTypeFilter] = React.useState<string>("all")
   const [searchQuery, setSearchQuery] = React.useState("")
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid")
 
   // State: Folder Tree mở rộng
-  const [expandedFolderIds, setExpandedFolderIds] = React.useState<Set<number>>(new Set([1, 2]))
+  const [expandedFolderIds, setExpandedFolderIds] = React.useState<Set<string | number>>(new Set())
 
   // State: Clipboard cho Copy & Move
   const [clipboard, setClipboard] = React.useState<{
     type: "copy" | "move"
     file: UploadedFile
   } | null>(null)
-  const [copiedUrl, setCopiedUrl] = React.useState<number | null>(null)
+  const [copiedUrl, setCopiedUrl] = React.useState<string | number | null>(null)
   const [toastMsg, setToastMsg] = React.useState<string | null>(null)
 
   // State: Modal tạo/sửa thư mục
   const [showFolderModal, setShowFolderModal] = React.useState(false)
   const [folderModalMode, setFolderModalMode] = React.useState<"create" | "edit">("create")
-  const [editingFolderId, setEditingFolderId] = React.useState<number | null>(null)
+  const [editingFolderId, setEditingFolderId] = React.useState<string | number | null>(null)
   const [folderFormName, setFolderFormName] = React.useState("")
-  const [folderFormParentId, setFolderFormParentId] = React.useState<number | null>(null)
+  const [folderFormParentId, setFolderFormParentId] = React.useState<string | number | null>(null)
   const [folderFormColor, setFolderFormColor] = React.useState("#3b82f6")
 
   // State: Modal di chuyển file
   const [showMoveFileModal, setShowMoveFileModal] = React.useState(false)
   const [movingFile, setMovingFile] = React.useState<UploadedFile | null>(null)
-  const [targetFolderId, setTargetFolderId] = React.useState<number | null>(null)
+  const [targetFolderId, setTargetFolderId] = React.useState<string | number | null>(null)
 
   // State: Modal đổi tên file
   const [showRenameFileModal, setShowRenameFileModal] = React.useState(false)
@@ -189,7 +189,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
   )
 
   // Toggle mở/đóng thư mục cây
-  const toggleFolderExpand = (folderId: number, e: React.MouseEvent) => {
+  const toggleFolderExpand = (folderId: string | number, e: React.MouseEvent) => {
     e.stopPropagation()
     setExpandedFolderIds((prev) => {
       const next = new Set(prev)
@@ -200,7 +200,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
   }
 
   // Mở modal tạo thư mục
-  const handleOpenCreateFolder = (parentId: number | null = null) => {
+  const handleOpenCreateFolder = (parentId: string | number | null = null) => {
     setFolderModalMode("create")
     setEditingFolderId(null)
     setFolderFormName("")
@@ -368,7 +368,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
   }
 
   // Dán tệp từ Clipboard vào thư mục
-  const handlePasteToFolder = async (folderId: number | null) => {
+  const handlePasteToFolder = async (folderId: string | number | null) => {
     if (!clipboard) return
 
     try {
@@ -411,7 +411,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
   }
 
   // Sao chép link URL
-  const handleCopyUrl = (url: string, fileId: number, e?: React.MouseEvent) => {
+  const handleCopyUrl = (url: string, fileId: string | number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     navigator.clipboard.writeText(url)
     setCopiedUrl(fileId)
@@ -1279,7 +1279,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
               <label className="text-xs font-semibold text-foreground">Thư mục cha (Parent)</label>
               <select
                 value={folderFormParentId ?? ""}
-                onChange={(e) => setFolderFormParentId(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => setFolderFormParentId(e.target.value || null)}
                 className="w-full h-9 rounded-md border border-border/70 bg-background px-3 text-xs text-foreground focus:outline-none"
               >
                 <option value="">-- Media Root (Thư mục gốc) --</option>
@@ -1388,7 +1388,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
               <label className="text-xs font-semibold text-foreground">Chọn thư mục đích</label>
               <select
                 value={targetFolderId ?? ""}
-                onChange={(e) => setTargetFolderId(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => setTargetFolderId(e.target.value || null)}
                 className="w-full h-9 rounded-md border border-border/70 bg-background px-3 text-xs text-foreground focus:outline-none"
               >
                 <option value="">-- Media Root (Thư mục gốc) --</option>

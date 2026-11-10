@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"ganigeorgiev.com/pocketbase/pocketbase"
 	"ganigeorgiev.com/pocketbase/pocketbase/apis"
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
 
@@ -40,6 +41,10 @@ func Register(app core.App) {
 	rbacModule, catalog := rbac.NewModule(features)
 	mods := append(features, rbacModule)
 
+	if pb, ok := app.(*pocketbase.PocketBase); ok {
+		registerCommands(pb, catalog)
+	}
+
 	for _, m := range mods {
 		if m.Init != nil {
 			m.Init(app)
@@ -72,6 +77,12 @@ func Register(app core.App) {
 func systemRoutes(se *core.ServeEvent) {
 	se.Router.GET("/health", func(e *core.RequestEvent) error {
 		return e.JSON(200, map[string]any{"status": "ok"})
+	})
+	se.Router.GET("/ready", func(e *core.RequestEvent) error {
+		if _, err := e.App.CountRecords("roles"); err != nil {
+			return e.JSON(503, map[string]any{"status": "unavailable", "error": err.Error()})
+		}
+		return e.JSON(200, map[string]any{"status": "ready", "database": "ok"})
 	})
 	se.Router.GET("/favicon.ico", func(e *core.RequestEvent) error {
 		return e.NoContent(204)

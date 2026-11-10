@@ -61,9 +61,9 @@ export interface Role {
 }
 
 export interface MediaFolder {
-  id: number
-  parent_id?: number | null
-  user_id: number
+  id: string | number
+  parent_id?: string | number | null
+  user_id: string | number
   name: string
   color: string
   created_at: string
@@ -73,9 +73,9 @@ export interface MediaFolder {
 }
 
 export interface UploadedFile {
-  id: number
-  folder_id?: number | null
-  user_id: number
+  id: string | number
+  folder_id?: string | number | null
+  user_id: string | number
   original_name?: string
   filename?: string
   file_name?: string

@@ -492,7 +492,7 @@ export const api = {
   },
 
   // File & Media Library
-  async listFiles(query?: { folder_id?: number | null; type?: string; search?: string }): Promise<UploadedFile[]> {
+  async listFiles(query?: { folder_id?: string | number | null; type?: string; search?: string }): Promise<UploadedFile[]> {
     const params = new URLSearchParams()
     if (query?.folder_id !== undefined && query?.folder_id !== null) {
       params.append('folder_id', String(query.folder_id))
@@ -511,7 +511,7 @@ export const api = {
     return this.uploadFileToFolder(file)
   },
 
-  async uploadFileToFolder(file: File, folderId?: number | null): Promise<UploadedFile> {
+  async uploadFileToFolder(file: File, folderId?: string | number | null): Promise<UploadedFile> {
     const formData = new FormData()
     formData.append('file', file)
     if (folderId !== undefined && folderId !== null) {
@@ -523,29 +523,29 @@ export const api = {
     })
   },
 
-  async deleteFile(id: number): Promise<void> {
+  async deleteFile(id: string | number): Promise<void> {
     await request(`/api/v1/files/${id}`, { method: 'DELETE' })
   },
 
-  async moveFiles(fileIds: number[], folderId: number | null): Promise<void> {
+  async moveFiles(fileIds: Array<string | number>, folderId: string | number | null): Promise<void> {
     await request('/api/v1/files/move', {
       method: 'POST',
       body: JSON.stringify({ file_ids: fileIds, folder_id: folderId }),
     })
   },
 
-  async moveFile(id: number, folderId: number | null): Promise<void> {
+  async moveFile(id: string | number, folderId: string | number | null): Promise<void> {
     return this.moveFiles([id], folderId)
   },
 
-  async renameFile(id: number, name: string): Promise<UploadedFile> {
+  async renameFile(id: string | number, name: string): Promise<UploadedFile> {
     return request<UploadedFile>(`/api/v1/files/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ name }),
     })
   },
 
-  async copyFile(id: number, targetFolderId?: number | null): Promise<UploadedFile> {
+  async copyFile(id: string | number, targetFolderId?: string | number | null): Promise<UploadedFile> {
     return request<UploadedFile>(`/api/v1/files/${id}/copy`, {
       method: 'POST',
       body: JSON.stringify({ target_folder_id: targetFolderId }),
@@ -557,21 +557,21 @@ export const api = {
     return request<MediaFolder[]>('/api/v1/files/folders/tree')
   },
 
-  async createFolder(name: string, parentId?: number | null, color = '#3b82f6'): Promise<MediaFolder> {
+  async createFolder(name: string, parentId?: string | number | null, color = '#3b82f6'): Promise<MediaFolder> {
     return request<MediaFolder>('/api/v1/files/folders', {
       method: 'POST',
       body: JSON.stringify({ name, parent_id: parentId, color }),
     })
   },
 
-  async updateFolder(id: number, name: string, parentId?: number | null, color?: string): Promise<MediaFolder> {
+  async updateFolder(id: string | number, name: string, parentId?: string | number | null, color?: string): Promise<MediaFolder> {
     return request<MediaFolder>(`/api/v1/files/folders/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ name, parent_id: parentId, color }),
     })
   },
 
-  async deleteFolder(id: number): Promise<void> {
+  async deleteFolder(id: string | number): Promise<void> {
     await request(`/api/v1/files/folders/${id}`, { method: 'DELETE' })
   },
 

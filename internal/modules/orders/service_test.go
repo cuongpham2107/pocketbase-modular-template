@@ -17,6 +17,7 @@ func newService(t *testing.T) service {
 		t.Fatal(err)
 	}
 	t.Cleanup(app.Cleanup)
+	initHooks(app)
 	return service{app: app}
 }
 
@@ -39,7 +40,7 @@ func TestCreateValidates(t *testing.T) {
 	}
 }
 
-func TestCreateThenConfirmOnce(t *testing.T) {
+func TestCreateThenConfirmOnceAndEmitsNotifications(t *testing.T) {
 	svc := newService(t)
 
 	rec, err := svc.Create("", CreateInput{CustomerName: "Nguyễn Văn A", Total: 120000})
@@ -61,5 +62,11 @@ func TestCreateThenConfirmOnce(t *testing.T) {
 	}
 	if _, err := svc.Confirm("missing"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("missing: got %v, want ErrNotFound", err)
+	}
+
+	// Verify event hooks emitted 2 notifications (1 on create, 1 on confirm)
+	count, err := svc.app.CountRecords("notifications")
+	if err != nil || count != 2 {
+		t.Fatalf("notifications count = %d (err=%v), want 2", count, err)
 	}
 }
