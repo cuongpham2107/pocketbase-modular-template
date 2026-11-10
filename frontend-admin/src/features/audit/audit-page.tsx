@@ -2,30 +2,29 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 import {
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Download,
   Eye,
-  RefreshCw,
   ScrollText,
-  Search,
   XCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { PageCard, PageFooter, PageHeader, PageShell, PageToolbar } from "@/components/layout/page"
+  PageCard,
+  PageErrorBanner,
+  PageHeader,
+  PagePagination,
+  PageSearchInput,
+  PageSegmentedFilter,
+  PageShell,
+  PageToolbar,
+  RefreshButton,
+  ResponsiveDataTable,
+  type ResponsiveColumn,
+} from "@/components/layout/page"
 import {
   Select,
   SelectContent,
@@ -84,6 +83,23 @@ function toCSV(rows: AuditLog[]): string {
   return [header, ...body].join("\n")
 }
 
+function StatusBadge({ status }: { status: string }) {
+  if (status === "success") {
+    return (
+      <Badge className="border-emerald-500/25 bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400">
+        <CheckCircle2 className="mr-1 size-3" />
+        Thành công
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="destructive" className="text-[10px] font-semibold">
+      <XCircle className="mr-1 size-3" />
+      Thất bại
+    </Badge>
+  )
+}
+
 function DetailRow({
   label,
   value,
@@ -105,7 +121,9 @@ function DetailRow({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
         {value && (
           <Button
             variant="ghost"
@@ -117,7 +135,9 @@ function DetailRow({
           </Button>
         )}
       </div>
-      <p className={cn("break-all text-xs", mono && "font-mono text-[11px]")}>{value || "—"}</p>
+      <p className={cn("break-all text-xs", mono && "font-mono text-[11px]")}>
+        {value || "—"}
+      </p>
     </div>
   )
 }
@@ -130,17 +150,25 @@ export function AuditPage() {
   const [totalPages, setTotalPages] = React.useState(1)
   const [page, setPage] = React.useState(1)
   const [perPage, setPerPage] = React.useState(20)
-  const [status, setStatus] = React.useState("all")
+  const [status, setStatus] = React.useState<"all" | "success" | "failure">("all")
   const [search, setSearch] = React.useState("")
   const [action, setAction] = React.useState("")
   const [resource, setResource] = React.useState("")
-  const [filters, setFilters] = React.useState({ q: "", status: "all", action: "", resource: "" })
+  const [filters, setFilters] = React.useState({
+    q: "",
+    status: "all",
+    action: "",
+    resource: "",
+  })
+  const [reloadTick, setReloadTick] = React.useState(0)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [detail, setDetail] = React.useState<AuditLog | null>(null)
-  const [options, setOptions] = React.useState<AuditFilterOptions>({ actions: [], resources: [] })
+  const [options, setOptions] = React.useState<AuditFilterOptions>({
+    actions: [],
+    resources: [],
+  })
 
-  // Nạp danh sách giá trị cho dropdown lọc
   React.useEffect(() => {
     let cancelled = false
     api
@@ -156,16 +184,19 @@ export function AuditPage() {
     }
   }, [])
 
-  // Debounce bộ lọc
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
-      setFilters({ q: search.trim(), status, action: action.trim(), resource: resource.trim() })
+      setFilters({
+        q: search.trim(),
+        status,
+        action: action.trim(),
+        resource: resource.trim(),
+      })
       setPage(1)
     }, 350)
     return () => window.clearTimeout(timer)
   }, [search, status, action, resource])
 
-  // Gọi API lấy danh sách
   React.useEffect(() => {
     let cancelled = false
     setLoading(true)
@@ -202,7 +233,7 @@ export function AuditPage() {
     return () => {
       cancelled = true
     }
-  }, [page, perPage, filters, t])
+  }, [page, perPage, filters, reloadTick, t])
 
   const exportCSV = () => {
     if (logs.length === 0) {
@@ -219,6 +250,103 @@ export function AuditPage() {
     toast.success(t("audit.exported", { count: logs.length }))
   }
 
+  const columns: ResponsiveColumn<AuditLog>[] = [
+    {
+      key: "id",
+      header: "ID",
+      headerClassName: "w-16 text-center text-muted-foreground",
+      cellClassName: "text-center font-mono text-[11px] text-muted-foreground",
+      hideOnMobile: true,
+      render: (log) => `#${String(log.id).slice(0, 6)}`,
+    },
+    {
+      key: "time",
+      header: t("audit.time"),
+      headerClassName: "w-40",
+      cellClassName: "text-xs text-muted-foreground font-mono whitespace-nowrap",
+      render: (log) => formatTime(log.created_at, i18n.language),
+    },
+    {
+      key: "actor",
+      header: t("audit.actor"),
+      render: (log) => {
+        const initial = (log.actor_email || "A").charAt(0).toUpperCase()
+        return (
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+              {initial}
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="max-w-44 truncate text-xs font-semibold text-foreground">
+                {log.actor_email || "—"}
+              </span>
+              {log.trace_id && (
+                <span className="max-w-36 truncate font-mono text-[10px] text-muted-foreground">
+                  Trace: {log.trace_id.slice(0, 10)}
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      key: "action",
+      header: t("audit.action"),
+      headerClassName: "w-28",
+      render: (log) => (
+        <Badge
+          variant="outline"
+          className="bg-muted/40 font-mono text-[10px] font-semibold"
+        >
+          {log.action}
+        </Badge>
+      ),
+    },
+    {
+      key: "resource",
+      header: t("audit.resource"),
+      render: (log) =>
+        log.resource ? (
+          <span className="font-mono text-xs text-foreground/90">
+            {log.resource}
+            {log.resource_id ? (
+              <span className="font-normal text-muted-foreground"> #{log.resource_id}</span>
+            ) : (
+              ""
+            )}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: "status",
+      header: t("audit.status"),
+      headerClassName: "w-32",
+      render: (log) => <StatusBadge status={log.status} />,
+    },
+    {
+      key: "ip",
+      header: t("audit.ip"),
+      headerClassName: "w-32",
+      cellClassName: "font-mono text-xs text-muted-foreground",
+      hideOnMobile: true,
+      render: (log) => log.ip || "127.0.0.1",
+    },
+    {
+      key: "detail",
+      header: "Chi tiết",
+      headerClassName: "text-right text-muted-foreground pr-4",
+      cellClassName: "text-right pr-4",
+      render: () => (
+        <Button size="icon" variant="ghost" className="size-7 rounded-lg">
+          <Eye className="size-3.5 text-muted-foreground" />
+        </Button>
+      ),
+    },
+  ]
+
   return (
     <PageShell>
       <PageHeader
@@ -232,16 +360,11 @@ export function AuditPage() {
         }
         actions={
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 cursor-pointer gap-1.5 text-xs"
-              onClick={() => setPage((p) => p)}
-              disabled={loading}
-            >
-              <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-              {t("common.refresh")}
-            </Button>
+            <RefreshButton
+              loading={loading}
+              label={t("common.refresh")}
+              onClick={() => setReloadTick((v) => v + 1)}
+            />
             {can("audit:export") && (
               <Button
                 variant="outline"
@@ -260,53 +383,29 @@ export function AuditPage() {
 
       <PageCard>
         <PageToolbar>
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-2.5 size-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("audit.searchPlaceholder")}
-              className="pl-8 h-8 text-xs bg-muted/20"
-            />
-          </div>
+          <PageSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t("audit.searchPlaceholder")}
+          />
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-            <span className="text-[11px] text-muted-foreground font-medium">Kết quả:</span>
-            <div className="flex items-center bg-muted/40 p-0.5 rounded-lg border border-border/60 text-xs">
-              <button
-                type="button"
-                onClick={() => setStatus("all")}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  status === "all" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                }`}
-              >
-                Tất cả
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatus("success")}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  status === "success" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                }`}
-              >
-                Thành công
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatus("failure")}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  status === "failure" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                }`}
-              >
-                Thất bại
-              </button>
-            </div>
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <PageSegmentedFilter
+              label="Kết quả:"
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: "all", label: "Tất cả" },
+                { value: "success", label: "Thành công" },
+                { value: "failure", label: "Thất bại" },
+              ]}
+            />
 
             <Select value={action || "all"} onValueChange={(v) => setAction(v === "all" ? "" : v)}>
               <SelectTrigger
                 size="sm"
                 title={action || t("audit.allAction")}
-                className="h-8 w-fit min-w-[9rem] max-w-[14rem] text-xs cursor-pointer font-mono"
+                className="h-8 w-fit min-w-[8.5rem] max-w-[13rem] cursor-pointer font-mono text-xs"
               >
                 <SelectValue placeholder={t("audit.filterAction")} />
               </SelectTrigger>
@@ -320,11 +419,14 @@ export function AuditPage() {
               </SelectContent>
             </Select>
 
-            <Select value={resource || "all"} onValueChange={(v) => setResource(v === "all" ? "" : v)}>
+            <Select
+              value={resource || "all"}
+              onValueChange={(v) => setResource(v === "all" ? "" : v)}
+            >
               <SelectTrigger
                 size="sm"
                 title={resource || t("audit.allResource")}
-                className="h-8 w-fit min-w-[9rem] max-w-[14rem] text-xs cursor-pointer font-mono"
+                className="h-8 w-fit min-w-[8.5rem] max-w-[13rem] cursor-pointer font-mono text-xs"
               >
                 <SelectValue placeholder={t("audit.filterResource")} />
               </SelectTrigger>
@@ -340,177 +442,57 @@ export function AuditPage() {
           </div>
         </PageToolbar>
 
-        {error && (
-          <div className="p-3 m-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-            {error}
-          </div>
-        )}
+        <PageErrorBanner message={error} />
 
-        <Table>
-          <TableHeader className="bg-muted/40">
-            <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead className="w-16 text-center text-xs font-bold text-muted-foreground">ID</TableHead>
-              <TableHead className="w-40 text-xs font-bold text-foreground">{t("audit.time")}</TableHead>
-              <TableHead className="text-xs font-bold text-foreground">{t("audit.actor")}</TableHead>
-              <TableHead className="w-28 text-xs font-bold text-foreground">{t("audit.action")}</TableHead>
-              <TableHead className="text-xs font-bold text-foreground">{t("audit.resource")}</TableHead>
-              <TableHead className="w-32 text-xs font-bold text-foreground">{t("audit.status")}</TableHead>
-              <TableHead className="w-32 text-xs font-bold text-foreground">{t("audit.ip")}</TableHead>
-              <TableHead className="text-right text-xs font-bold text-muted-foreground pr-4">Chi tiết</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-40 text-center text-xs text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span>Đang tải nhật ký thao tác...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : logs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-40 text-center text-xs text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <ScrollText className="size-8 text-muted-foreground/60" />
-                    <p className="font-semibold text-foreground">{t("audit.empty")}</p>
-                    <p className="text-[11px] text-muted-foreground">Không tìm thấy bản ghi nhật ký phù hợp với bộ lọc.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              logs.map((log) => {
-                const initial = (log.actor_email || "A").charAt(0).toUpperCase()
-                const isSuccess = log.status === "success"
-
-                return (
-                  <TableRow
-                    key={log.id}
-                    onClick={() => setDetail(log)}
-                    className="hover:bg-muted/30 transition-colors border-border/50 cursor-pointer"
+        <ResponsiveDataTable
+          data={logs}
+          keyExtractor={(log) => log.id}
+          columns={columns}
+          onRowClick={(log) => setDetail(log)}
+          loading={loading}
+          loadingText="Đang tải nhật ký thao tác..."
+          emptyIcon={ScrollText}
+          emptyTitle={t("audit.empty")}
+          emptyDescription="Không tìm thấy bản ghi nhật ký phù hợp với bộ lọc."
+          renderMobileCard={(log) => (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 bg-muted/40 font-mono text-[10px] font-semibold"
                   >
-                    <TableCell className="text-center font-mono text-[11px] text-muted-foreground">
-                      #{String(log.id).slice(0, 6)}
-                    </TableCell>
+                    {log.action}
+                  </Badge>
+                  <span className="truncate font-mono text-xs font-semibold text-foreground">
+                    {log.resource || "—"}
+                    {log.resource_id ? ` #${log.resource_id}` : ""}
+                  </span>
+                </div>
+                <StatusBadge status={log.status} />
+              </div>
 
-                    <TableCell className="text-xs text-muted-foreground font-mono whitespace-nowrap">
-                      {formatTime(log.created_at, i18n.language)}
-                    </TableCell>
+              <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span className="truncate">{log.actor_email || "—"}</span>
+                <span className="shrink-0 font-mono">
+                  {formatTime(log.created_at, i18n.language)}
+                </span>
+              </div>
+            </div>
+          )}
+        />
 
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        <div className="size-7 rounded-full flex items-center justify-center font-bold text-xs bg-muted text-muted-foreground">
-                          {initial}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-semibold text-xs text-foreground truncate max-w-44">
-                            {log.actor_email || "—"}
-                          </span>
-                          {log.trace_id && (
-                            <span className="text-[10px] text-muted-foreground font-mono truncate max-w-36">
-                              Trace: {log.trace_id.slice(0, 10)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className="font-mono text-[10px] font-semibold bg-muted/40"
-                      >
-                        {log.action}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell>
-                      {log.resource ? (
-                        <span className="font-mono text-xs text-foreground/90">
-                          {log.resource}
-                          {log.resource_id ? <span className="text-muted-foreground font-normal"> #{log.resource_id}</span> : ""}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-
-                    <TableCell>
-                      {isSuccess ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/15 font-semibold text-[10px]">
-                          <CheckCircle2 className="size-3 mr-1" />
-                          Thành công
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="font-semibold text-[10px]">
-                          <XCircle className="size-3 mr-1" />
-                          Thất bại
-                        </Badge>
-                      )}
-                    </TableCell>
-
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {log.ip || "127.0.0.1"}
-                    </TableCell>
-
-                    <TableCell className="text-right pr-4">
-                      <Button size="icon" variant="ghost" className="size-7 rounded-lg">
-                        <Eye className="size-3.5 text-muted-foreground" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-
-        <PageFooter>
-          <div className="flex items-center gap-2">
-            <span>Hiển thị</span>
-            <select
-              value={perPage}
-              onChange={(e) => {
-                setPerPage(Number(e.target.value))
-                setPage(1)
-              }}
-              className="bg-background border border-border/60 rounded-md px-2 py-1 text-xs text-foreground focus:outline-none"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span>trên tổng số <strong className="text-foreground">{total}</strong> bản ghi</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px]">
-              Trang {page} / {Math.max(1, totalPages)}
-            </span>
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || loading}
-              className="h-7 cursor-pointer px-2 text-xs"
-            >
-              <ChevronLeft className="size-3 mr-1" />
-              Trước
-            </Button>
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages || loading}
-              className="h-7 cursor-pointer px-2 text-xs"
-            >
-              Sau
-              <ChevronRight className="size-3 ml-1" />
-            </Button>
-          </div>
-        </PageFooter>
+        <PagePagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={total}
+          perPage={perPage}
+          perPageOptions={[10, 20, 50, 100]}
+          itemLabel="bản ghi"
+          loading={loading}
+          onPageChange={setPage}
+          onPerPageChange={setPerPage}
+        />
       </PageCard>
 
       <Sheet open={detail !== null} onOpenChange={(open) => !open && setDetail(null)}>
@@ -527,7 +509,11 @@ export function AuditPage() {
               <DetailRow label={t("audit.action")} value={detail.action} />
               <DetailRow
                 label={t("audit.resource")}
-                value={detail.resource ? `${detail.resource}${detail.resource_id ? `#${detail.resource_id}` : ""}` : null}
+                value={
+                  detail.resource
+                    ? `${detail.resource}${detail.resource_id ? `#${detail.resource_id}` : ""}`
+                    : null
+                }
               />
               <DetailRow label={t("audit.status")} value={detail.status} mono={false} />
               <DetailRow label={t("audit.ip")} value={detail.ip} />

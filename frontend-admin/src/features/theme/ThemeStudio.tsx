@@ -17,11 +17,13 @@ import {
   PALETTES,
   RADIUS_VALUES,
   FONT_DEFINITIONS,
+  FONT_SIZE_VALUES,
   type PaletteColor,
   type SurfaceType,
   type BorderRadius,
   type ContentWidth,
   type FontFamily,
+  type FontSize,
   type SidebarWidth,
 } from "./theme-config"
 
@@ -349,6 +351,40 @@ export function ThemeStudio() {
                 </section>
               )}
 
+              {/* Section 6B: Font Size */}
+              {(activeTab === "all" || activeTab === "style") && (
+                <section className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">Cỡ chữ (Font Size)</span>
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      {FONT_SIZE_VALUES[settings.fontSize || "md"]?.label}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                    {(Object.keys(FONT_SIZE_VALUES) as FontSize[]).map((sizeKey) => {
+                      const def = FONT_SIZE_VALUES[sizeKey]
+                      const isActive = (settings.fontSize || "md") === sizeKey
+                      return (
+                        <button
+                          key={sizeKey}
+                          type="button"
+                          onClick={() => updateSetting("fontSize", sizeKey)}
+                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-card text-foreground shadow-xs font-bold"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                          title={def.label}
+                        >
+                          {def.shortLabel}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
+
               {/* Section 7: Content Width */}
               {(activeTab === "all" || activeTab === "layout") && (
                 <section className="space-y-2">
@@ -447,6 +483,45 @@ export function ThemeStudio() {
                         </button>
                       )
                     })}
+                  </div>
+                </section>
+              )}
+
+              {/* Section 10: Sticky Table Header */}
+              {(activeTab === "all" || activeTab === "layout") && (
+                <section className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">
+                      Cố định tiêu đề bảng (Sticky Header)
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      {settings.stickyTableHeader ? "Đang bật" : "Đang tắt"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                    <button
+                      type="button"
+                      onClick={() => updateSetting("stickyTableHeader", true)}
+                      className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                        settings.stickyTableHeader
+                          ? "bg-card text-foreground shadow-xs font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Bật (Ghim tiêu đề)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateSetting("stickyTableHeader", false)}
+                      className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                        !settings.stickyTableHeader
+                          ? "bg-card text-foreground shadow-xs font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Tắt (Cuộn thường)
+                    </button>
                   </div>
                 </section>
               )}

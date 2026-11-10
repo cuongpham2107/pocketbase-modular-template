@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { PageHeader, PageShell } from "@/components/layout/page"
+import { PageHeader, PageShell, RefreshButton } from "@/components/layout/page"
 import { Checkbox } from "@/components/ui/checkbox"
 import { api } from "@/lib/api"
 import type {
@@ -380,17 +380,7 @@ export function PermissionManager({ currentUser: _currentUser }: PermissionManag
           </Badge>
         }
         actions={
-          <Button
-            size="sm"
-            onClick={fetchData}
-            variant="outline"
-            disabled={loading}
-            className="h-8 cursor-pointer text-xs font-medium"
-            title="Đồng bộ lại dữ liệu"
-          >
-            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            Làm mới
-          </Button>
+          <RefreshButton loading={loading} onClick={fetchData} title="Đồng bộ lại dữ liệu" />
         }
       />
 

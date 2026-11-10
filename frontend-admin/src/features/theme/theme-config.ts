@@ -18,6 +18,7 @@ export type ContentWidth =
   | "6xl"
   | "5xl"
 export type FontFamily = "geist" | "inter" | "outfit" | "jakarta" | "figtree" | "mono"
+export type FontSize = "xs" | "sm" | "md" | "lg" | "xl"
 export type Density = "tight" | "normal" | "spacious"
 export type NavLayout = "sidebar-collapsible" | "sidebar-fixed" | "top"
 export type SidebarWidth = "16rem" | "18rem" | "20rem" | "22rem" | "24rem"
@@ -125,6 +126,14 @@ export const FONT_DEFINITIONS: Record<FontFamily, { label: string; fontClass: st
   mono: { label: "JetBrains Mono", fontClass: "font-mono", cssFamily: "'JetBrains Mono', monospace" },
 }
 
+export const FONT_SIZE_VALUES: Record<FontSize, { label: string; shortLabel: string; px: string; scale: number }> = {
+  xs: { label: "Nhỏ (14px)", shortLabel: "14px", px: "14px", scale: 0.875 },
+  sm: { label: "Hơi nhỏ (15px)", shortLabel: "15px", px: "15px", scale: 0.9375 },
+  md: { label: "Tiêu chuẩn (16px)", shortLabel: "16px", px: "16px", scale: 1 },
+  lg: { label: "Lớn (17px)", shortLabel: "17px", px: "17px", scale: 1.0625 },
+  xl: { label: "Rất lớn (18px)", shortLabel: "18px", px: "18px", scale: 1.125 },
+}
+
 export interface ThemeSettings {
   preset: ThemePreset
   mode: "light" | "dark"
@@ -133,9 +142,11 @@ export interface ThemeSettings {
   radius: BorderRadius
   contentWidth: ContentWidth
   fontFamily: FontFamily
+  fontSize: FontSize
   density: Density
   navLayout: NavLayout
   sidebarWidth: SidebarWidth
+  stickyTableHeader: boolean
 }
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
@@ -146,9 +157,11 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   radius: "md",
   contentWidth: "7xl",
   fontFamily: "geist",
+  fontSize: "md",
   density: "normal",
   navLayout: "sidebar-collapsible",
   sidebarWidth: "18rem",
+  stickyTableHeader: true,
 }
 
 export const PRESET_DEFAULTS: Record<ThemePreset, Partial<ThemeSettings>> = {

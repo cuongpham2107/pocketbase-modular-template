@@ -16,10 +16,8 @@ import {
   MoveRight,
   Copy,
   Check,
-  Search,
   LayoutGrid,
   List,
-  X,
   HardDrive,
   Images,
   Film,
@@ -31,7 +29,15 @@ import {
   RefreshCw,
   FolderPen,
 } from "lucide-react"
-import { PageHeader, PageShell } from "@/components/layout/page"
+import { toast } from "sonner"
+import {
+  ConfirmDeleteDialog,
+  FormField,
+  PageHeader,
+  PageSearchInput,
+  PageShell,
+  RefreshButton,
+} from "@/components/layout/page"
 import { useTranslation } from "react-i18next"
 
 import { api } from "@/lib/api"
@@ -104,7 +110,14 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
     file: UploadedFile
   } | null>(null)
   const [copiedUrl, setCopiedUrl] = React.useState<string | number | null>(null)
-  const [toastMsg, setToastMsg] = React.useState<string | null>(null)
+
+  // State: Confirm Delete Dialog (cho cả Folder hoặc File)
+  const [deleteTarget, setDeleteTarget] = React.useState<
+    | { kind: "folder"; folder: MediaFolder }
+    | { kind: "file"; file: UploadedFile }
+    | null
+  >(null)
+  const [deleting, setDeleting] = React.useState(false)
 
   // State: Modal tạo/sửa thư mục
   const [showFolderModal, setShowFolderModal] = React.useState(false)
@@ -132,10 +145,9 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
   const [uploading, setUploading] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
-  // Thông báo toast tự tắt
+  // Thông báo qua sonner toast đồng bộ toàn hệ thống
   const showToast = (msg: string) => {
-    setToastMsg(msg)
-    setTimeout(() => setToastMsg(null), 3000)
+    toast.success(msg)
   }
 
   // Tải danh mục cây thư mục
@@ -246,27 +258,41 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
       loadFolderTree()
       if (selectedFolderId) loadFiles()
     } catch (err: any) {
-      alert(err.message || "Không thể lưu thư mục")
+      toast.error(err.message || "Không thể lưu thư mục")
     }
   }
 
-  // Xóa thư mục
-  const handleDeleteFolder = async (folder: MediaFolder, e?: React.MouseEvent) => {
+  // Mở hộp thoại xác nhận xóa thư mục
+  const handleDeleteFolder = (folder: MediaFolder, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    if (!confirm(`Bạn có chắc chắn muốn xóa thư mục "${folder.name}" và toàn bộ tệp bên trong?`)) {
-      return
-    }
+    setDeleteTarget({ kind: "folder", folder })
+  }
 
+  // Thực thi xóa thư mục hoặc tệp tin sau khi xác nhận
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await api.deleteFolder(folder.id)
-      showToast(`Đã xóa thư mục "${folder.name}"`)
-      if (selectedFolderId === folder.id) {
-        setSelectedFolderId(null)
+      if (deleteTarget.kind === "folder") {
+        const folder = deleteTarget.folder
+        await api.deleteFolder(folder.id)
+        showToast(`Đã xóa thư mục "${folder.name}"`)
+        if (selectedFolderId === folder.id) {
+          setSelectedFolderId(null)
+        }
+      } else {
+        const file = deleteTarget.file
+        await api.deleteFile(file.id)
+        showToast(`Đã xóa tệp "${file.original_name || file.filename}"`)
+        if (previewFile?.id === file.id) setPreviewFile(null)
       }
-      loadFolderTree()
-      loadFiles()
+      setDeleteTarget(null)
+      void loadFolderTree()
+      void loadFiles()
     } catch (err: any) {
-      alert(err.message || "Xóa thư mục thất bại")
+      toast.error(err.message || "Thao tác xóa thất bại")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -284,7 +310,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
       loadFiles()
       loadFolderTree()
     } catch (err: any) {
-      alert(err.message || "Tải tệp tin thất bại")
+      toast.error(err.message || "Tải tệp tin thất bại")
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
@@ -310,22 +336,10 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
     }
   }
 
-  // Xóa tệp tin
-  const handleDeleteFile = async (file: UploadedFile, e?: React.MouseEvent) => {
+  // Mở hộp thoại xác nhận xóa tệp tin
+  const handleDeleteFile = (file: UploadedFile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    if (!confirm(`Bạn có chắc muốn xóa tệp "${file.original_name || file.filename}"?`)) {
-      return
-    }
-
-    try {
-      await api.deleteFile(file.id)
-      showToast(`Đã xóa tệp "${file.original_name || file.filename}"`)
-      if (previewFile?.id === file.id) setPreviewFile(null)
-      loadFiles()
-      loadFolderTree()
-    } catch (err: any) {
-      alert(err.message || "Xóa tệp thất bại")
-    }
+    setDeleteTarget({ kind: "file", file })
   }
 
   // Đổi tên tệp tin
@@ -349,7 +363,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
         setPreviewFile({ ...previewFile, original_name: newFileName.trim() })
       }
     } catch (err: any) {
-      alert(err.message || "Đổi tên tệp thất bại")
+      toast.error(err.message || "Đổi tên tệp thất bại")
     }
   }
 
@@ -383,7 +397,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
       loadFiles()
       loadFolderTree()
     } catch (err: any) {
-      alert(err.message || "Thao tác dán tệp thất bại")
+      toast.error(err.message || "Thao tác dán tệp thất bại")
     }
   }
 
@@ -406,7 +420,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
       loadFiles()
       loadFolderTree()
     } catch (err: any) {
-      alert(err.message || "Di chuyển tệp thất bại")
+      toast.error(err.message || "Di chuyển tệp thất bại")
     }
   }
 
@@ -554,29 +568,34 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
         icon={Images}
         title={t("media.title")}
         description={t("media.description")}
+        actions={
+          <>
+            <RefreshButton
+              loading={loadingFiles}
+              onClick={() => {
+                void loadFolderTree()
+                void loadFiles()
+              }}
+            />
+            <Button
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
+            >
+              <UploadCloud className="size-3.5" />
+              <span>{uploading ? "Đang tải..." : t("media.upload")}</span>
+            </Button>
+          </>
+        }
       />
-
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toastMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="fixed top-5 right-5 z-50 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-foreground text-background text-xs font-semibold shadow-lg"
-          >
-            <Check className="size-3.5 text-emerald-400" />
-            <span>{toastMsg}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Main Split Container */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-[660px] rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-xs overflow-hidden">
         {/* ========================================================= */}
         {/* CỘT TRÁI: FOLDER TREE EXPLORER (3 COLS)                     */}
         {/* ========================================================= */}
-        <div className="lg:col-span-3 border-r border-border/50 bg-muted/20 flex flex-col p-3 sm:p-4 space-y-4">
+        <div className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-border/50 bg-muted/20 flex flex-col p-3 sm:p-4 space-y-3">
           {/* Header Explorer & Nút Thêm Folder */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -596,8 +615,8 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
             </Button>
           </div>
 
-          {/* Nhóm Lọc Nhanh (System Categories) */}
-          <div className="space-y-1">
+          {/* Nhóm Lọc Nhanh (System Categories - 2x2 trên mobile, dọc trên desktop) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-1">
             <button
               type="button"
               onClick={() => {
@@ -744,25 +763,13 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
 
                 {/* Actions: Search, Filter, ViewMode, Upload */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Search Box */}
-                  <div className="relative w-44 sm:w-56">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={t("media.searchPlaceholder")}
-                      data-testid="media-search"
-                      className="h-8 pl-8 pr-7 text-xs rounded-lg bg-background/80"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="size-3" />
-                      </button>
-                    )}
-                  </div>
+                  <PageSearchInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder={t("media.searchPlaceholder")}
+                    data-testid="media-search"
+                    className="w-44 sm:w-56"
+                  />
 
                   {/* View Mode Toggle */}
                   <div className="flex items-center border border-border/60 rounded-lg p-0.5 bg-muted/40">
@@ -1085,14 +1092,20 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
                   </div>
                 ) : (
                   /* Dạng Bảng Danh Sách */
-                  <div className="rounded-xl border border-border/60 overflow-hidden bg-card">
+                  <div
+                    data-slot="table-container"
+                    className="rounded-xl border border-border/60 overflow-x-auto bg-card"
+                  >
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground font-mono text-[11px]">
+                      <thead
+                        data-slot="table-header"
+                        className="bg-muted/40 border-b border-border/50 text-muted-foreground font-mono text-[11px]"
+                      >
                         <tr>
                           <th className="p-3">Tên Tệp Tin</th>
-                          <th className="p-3">Định Dạng</th>
+                          <th className="p-3 hidden md:table-cell">Định Dạng</th>
                           <th className="p-3">Dung Lượng</th>
-                          <th className="p-3">Ngày Tải Lên</th>
+                          <th className="p-3 hidden sm:table-cell">Ngày Tải Lên</th>
                           <th className="p-3 text-right">Thao Tác</th>
                         </tr>
                       </thead>
@@ -1108,17 +1121,17 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
                                   onClick={() => setPreviewFile(file)}
                                   className="hover:bg-muted/30 transition-colors cursor-pointer"
                                 >
-                                  <td className="p-3 flex items-center gap-2.5 font-medium max-w-xs truncate">
+                                  <td className="p-3 flex items-center gap-2.5 font-medium max-w-[160px] sm:max-w-xs truncate">
                                     {getFileIcon(file.mime_type)}
                                     <span className="truncate">{displayName}</span>
                                   </td>
-                                  <td className="p-3 text-muted-foreground font-mono text-[11px]">
+                                  <td className="p-3 text-muted-foreground font-mono text-[11px] hidden md:table-cell">
                                     {file.mime_type}
                                   </td>
                                   <td className="p-3 text-muted-foreground font-mono text-[11px]">
                                     {formatBytes(file.size || file.file_size)}
                                   </td>
-                                  <td className="p-3 text-muted-foreground text-[11px]">
+                                  <td className="p-3 text-muted-foreground text-[11px] hidden sm:table-cell">
                                     {new Date(file.created_at).toLocaleString("vi-VN")}
                                   </td>
                                   <td className="p-3 text-right">
@@ -1264,8 +1277,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
           </DialogHeader>
 
           <form onSubmit={handleSaveFolder} className="space-y-4 py-2">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Tên thư mục *</label>
+            <FormField label="Tên thư mục" required>
               <Input
                 required
                 placeholder="Ví dụ: Hình ảnh sản phẩm, Tài liệu 2026..."
@@ -1273,10 +1285,9 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
                 onChange={(e) => setFolderFormName(e.target.value)}
                 className="h-9 text-xs"
               />
-            </div>
+            </FormField>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Thư mục cha (Parent)</label>
+            <FormField label="Thư mục cha (Parent)">
               <select
                 value={folderFormParentId ?? ""}
                 onChange={(e) => setFolderFormParentId(e.target.value || null)}
@@ -1289,7 +1300,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
                   </option>
                 ))}
               </select>
-            </div>
+            </FormField>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">Màu nhận diện</label>
@@ -1518,6 +1529,26 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
           )}
         </DialogContent>
       </Dialog>
+      {/* Hộp thoại xác nhận xóa thư mục hoặc tệp tin dùng chung */}
+      <ConfirmDeleteDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={deleteTarget?.kind === "folder" ? "Xác Nhận Xóa Thư Mục" : "Xác Nhận Xóa Tệp Tin"}
+        description={
+          deleteTarget?.kind === "folder" ? (
+            <>
+              Bạn có chắc chắn muốn xóa thư mục <strong>{deleteTarget.folder.name}</strong> và toàn bộ tệp bên trong?
+            </>
+          ) : (
+            <>
+              Bạn có chắc chắn muốn xóa tệp{" "}
+              <strong>{deleteTarget?.file.original_name || deleteTarget?.file.filename}</strong>?
+            </>
+          )
+        }
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+      />
     </PageShell>
   )
 }

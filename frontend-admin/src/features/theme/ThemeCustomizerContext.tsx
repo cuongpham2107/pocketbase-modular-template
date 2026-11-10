@@ -4,6 +4,7 @@ import { api } from "@/lib/api"
 import {
   DEFAULT_THEME_SETTINGS,
   FONT_DEFINITIONS,
+  FONT_SIZE_VALUES,
   PALETTES,
   PRESET_DEFAULTS,
   RADIUS_VALUES,
@@ -136,14 +137,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         break
     }
 
-    // 5. Font family
+    // 5. Font family & Font size
     const font = FONT_DEFINITIONS[settings.fontFamily]
     if (font) {
       document.body.style.fontFamily = font.cssFamily
     }
+    const fontSizeDef = FONT_SIZE_VALUES[settings.fontSize] || FONT_SIZE_VALUES.md
+    root.style.fontSize = fontSizeDef.px
+    root.style.setProperty("--font-scale", String(fontSizeDef.scale))
 
     // 6. Sidebar width CSS variable
     root.style.setProperty("--sidebar-width", settings.sidebarWidth)
+
+    // 7. Sticky Table Header attribute
+    root.dataset.stickyHeader = settings.stickyTableHeader ? "true" : "false"
   }, [settings])
 
   const updateSetting = React.useCallback(<K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) => {

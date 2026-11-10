@@ -130,3 +130,26 @@
     @apply font-sans;
     }
 }
+
+/* Scale arbitrary 10px/11px text utility classes proportionally with Theme Studio fontSize */
+.text-\[10px\] {
+  font-size: calc(10px * var(--font-scale, 1));
+}
+.text-\[11px\] {
+  font-size: calc(11px * var(--font-scale, 1));
+}
+
+/* Sticky Table Header controlled via Theme Studio (html[data-sticky-header="true"]) */
+html[data-sticky-header="true"] [data-slot="table-container"] {
+  max-height: calc(100vh - 15.5rem);
+  overflow-y: auto;
+}
+
+html[data-sticky-header="true"] [data-slot="table-header"] {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: color-mix(in oklab, var(--card) 92%, var(--muted));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 0 var(--border);
+}

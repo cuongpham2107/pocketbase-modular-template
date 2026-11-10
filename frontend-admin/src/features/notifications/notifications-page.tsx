@@ -5,13 +5,8 @@ import {
   Bell,
   Check,
   CheckCheck,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   Info,
-  Loader2,
-  RefreshCw,
-  Search,
   ShieldAlert,
   Sparkles,
   Trash2,
@@ -20,21 +15,18 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   PageCard,
-  PageFooter,
+  PageErrorBanner,
   PageHeader,
+  PagePagination,
+  PageSearchInput,
+  PageSegmentedFilter,
   PageShell,
   PageToolbar,
+  RefreshButton,
+  ResponsiveDataTable,
+  type ResponsiveColumn,
 } from "@/components/layout/page"
 import {
   Select,
@@ -75,7 +67,7 @@ function getTypeBadge(type: string) {
       return (
         <Badge
           variant="outline"
-          className="gap-1 border-amber-500/30 bg-amber-500/10 font-medium text-[10px] text-amber-600 dark:text-amber-400"
+          className="gap-1 border-amber-500/30 bg-amber-500/10 text-[10px] font-medium text-amber-600 dark:text-amber-400"
         >
           <AlertTriangle className="size-2.5" />
           {type}
@@ -85,7 +77,7 @@ function getTypeBadge(type: string) {
       return (
         <Badge
           variant="outline"
-          className="gap-1 border-destructive/30 bg-destructive/10 font-medium text-[10px] text-destructive"
+          className="gap-1 border-destructive/30 bg-destructive/10 text-[10px] font-medium text-destructive"
         >
           <ShieldAlert className="size-2.5" />
           {type}
@@ -95,7 +87,7 @@ function getTypeBadge(type: string) {
       return (
         <Badge
           variant="outline"
-          className="gap-1 border-purple-500/30 bg-purple-500/10 font-medium text-[10px] text-purple-600 dark:text-purple-400"
+          className="gap-1 border-purple-500/30 bg-purple-500/10 text-[10px] font-medium text-purple-600 dark:text-purple-400"
         >
           <Sparkles className="size-2.5" />
           {type}
@@ -106,7 +98,7 @@ function getTypeBadge(type: string) {
       return (
         <Badge
           variant="outline"
-          className="gap-1 border-sky-500/30 bg-sky-500/10 font-medium text-[10px] text-sky-600 dark:text-sky-400"
+          className="gap-1 border-sky-500/30 bg-sky-500/10 text-[10px] font-medium text-sky-600 dark:text-sky-400"
         >
           <Info className="size-2.5" />
           {type || "info"}
@@ -120,7 +112,7 @@ export function NotificationsPage() {
   const store = useNotifications(true)
   const [busy, setBusy] = React.useState(false)
   const [search, setSearch] = React.useState("")
-  const [statusFilter, setStatusFilter] = React.useState("all")
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "unread" | "read">("all")
   const [typeFilter, setTypeFilter] = React.useState("all")
   const [detail, setDetail] = React.useState<Notification | null>(null)
   const [limit, setLimit] = React.useState(10)
@@ -135,7 +127,6 @@ export function NotificationsPage() {
     }
   }, [])
 
-  // Lọc dữ liệu thông báo theo tìm kiếm, trạng thái và loại
   const filteredItems = React.useMemo(() => {
     return store.items.filter((item) => {
       if (statusFilter === "unread" && item.read_at) return false
@@ -153,14 +144,12 @@ export function NotificationsPage() {
     })
   }, [store.items, statusFilter, typeFilter, search])
 
-  // Phân trang phía client cho các items đã lọc
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / limit))
   const paginatedItems = React.useMemo(() => {
     const start = (page - 1) * limit
     return filteredItems.slice(start, start + limit)
   }, [filteredItems, page, limit])
 
-  // Lấy các type duy nhất từ items
   const uniqueTypes = React.useMemo(() => {
     const set = new Set<string>()
     store.items.forEach((item) => {
@@ -168,6 +157,114 @@ export function NotificationsPage() {
     })
     return Array.from(set)
   }, [store.items])
+
+  const renderItemActions = (item: Notification) => (
+    <div
+      className="flex items-center justify-end gap-1"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {!item.read_at && (
+        <Button
+          size="icon"
+          variant="ghost"
+          title={t("notifications.markRead")}
+          onClick={() => {
+            void store.markRead(item.id)
+            toast.success(t("notifications.markRead"))
+          }}
+          className="size-7 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
+        >
+          <Check className="size-3.5" />
+        </Button>
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        title={t("common.delete")}
+        onClick={() => {
+          void store.remove(item.id)
+          toast.success(t("notifications.deleted"))
+        }}
+        className="size-7 cursor-pointer rounded-lg text-muted-foreground hover:text-destructive"
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        title="Xem chi tiết"
+        onClick={() => setDetail(item)}
+        className="size-7 cursor-pointer rounded-lg text-muted-foreground"
+      >
+        <Eye className="size-3.5" />
+      </Button>
+    </div>
+  )
+
+  const columns: ResponsiveColumn<Notification>[] = [
+    {
+      key: "id",
+      header: "ID",
+      headerClassName: "w-16 text-center text-muted-foreground",
+      cellClassName: "text-center font-mono text-[11px] text-muted-foreground",
+      hideOnMobile: true,
+      render: (item) => `#${String(item.id).slice(0, 6)}`,
+    },
+    {
+      key: "status",
+      header: "Trạng thái",
+      headerClassName: "w-28",
+      render: (item) =>
+        item.read_at ? (
+          <span className="text-xs text-muted-foreground">Đã đọc</span>
+        ) : (
+          <Badge className="border-primary/25 bg-primary/10 text-[10px] font-semibold text-primary hover:bg-primary/15">
+            Chưa đọc
+          </Badge>
+        ),
+    },
+    {
+      key: "type",
+      header: "Phân loại",
+      headerClassName: "w-28",
+      render: (item) => getTypeBadge(item.type),
+    },
+    {
+      key: "title",
+      header: "Tiêu đề",
+      render: (item) => (
+        <span
+          className={cn(
+            "text-xs",
+            item.read_at ? "font-medium text-foreground/90" : "font-bold text-foreground",
+          )}
+        >
+          {item.title}
+        </span>
+      ),
+    },
+    {
+      key: "body",
+      header: "Nội dung",
+      cellClassName: "max-w-xs truncate text-xs text-muted-foreground",
+      hideOnMobile: true,
+      render: (item) => item.body || "—",
+    },
+    {
+      key: "created",
+      header: "Thời gian",
+      headerClassName: "w-40",
+      cellClassName: "text-xs text-muted-foreground font-mono whitespace-nowrap",
+      render: (item) => formatTime(item.created_at, i18n.language),
+    },
+    {
+      key: "actions",
+      header: "Thao tác",
+      headerClassName: "text-right text-muted-foreground pr-4",
+      cellClassName: "text-right pr-4",
+      render: (item) => renderItemActions(item),
+    },
+  ]
 
   return (
     <PageShell>
@@ -177,27 +274,21 @@ export function NotificationsPage() {
         description={t("notifications.pageDescription")}
         badge={
           store.unread > 0 ? (
-            <Badge variant="outline" className="px-2 py-0.5 font-mono text-[11px] bg-primary/10 text-primary border-primary/20">
+            <Badge
+              variant="outline"
+              className="border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-[11px] text-primary"
+            >
               {t("notifications.unread", { count: store.unread })}
             </Badge>
           ) : undefined
         }
         actions={
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 cursor-pointer gap-1.5 text-xs"
-              disabled={busy || store.loading}
+            <RefreshButton
+              loading={busy || store.loading}
+              label={t("common.refresh")}
               onClick={() => void run(() => store.reload())}
-            >
-              {busy || store.loading ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="size-3.5" />
-              )}
-              {t("common.refresh")}
-            </Button>
+            />
             <Button
               variant="default"
               size="sm"
@@ -219,62 +310,41 @@ export function NotificationsPage() {
 
       <PageCard>
         <PageToolbar>
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-2.5 size-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
+          <PageSearchInput
+            value={search}
+            onChange={(val) => {
+              setSearch(val)
+              setPage(1)
+            }}
+            placeholder="Tìm theo tiêu đề, nội dung..."
+          />
+
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <PageSegmentedFilter
+              label="Trạng thái:"
+              value={statusFilter}
+              onChange={(val) => {
+                setStatusFilter(val)
                 setPage(1)
               }}
-              placeholder="Tìm theo tiêu đề, nội dung..."
-              className="pl-8 h-8 text-xs bg-muted/20"
+              options={[
+                { value: "all", label: "Tất cả" },
+                { value: "unread", label: "Chưa đọc" },
+                { value: "read", label: "Đã đọc" },
+              ]}
             />
-          </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-            <span className="text-[11px] text-muted-foreground font-medium">Trạng thái:</span>
-            <div className="flex items-center bg-muted/40 p-0.5 rounded-lg border border-border/60 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("all")
-                  setPage(1)
-                }}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  statusFilter === "all" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                }`}
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => {
+                setTypeFilter(v)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-8 w-fit min-w-[8.5rem] cursor-pointer font-mono text-xs"
               >
-                Tất cả
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("unread")
-                  setPage(1)
-                }}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  statusFilter === "unread" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                }`}
-              >
-                Chưa đọc
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("read")
-                  setPage(1)
-                }}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  statusFilter === "read" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
-                }`}
-              >
-                Đã đọc
-              </button>
-            </div>
-
-            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1) }}>
-              <SelectTrigger size="sm" className="h-8 w-fit min-w-[8.5rem] cursor-pointer text-xs font-mono">
                 <SelectValue placeholder="Loại thông báo" />
               </SelectTrigger>
               <SelectContent>
@@ -289,186 +359,65 @@ export function NotificationsPage() {
           </div>
         </PageToolbar>
 
-        {store.error && (
-          <div className="p-3 m-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-            {store.error}
-          </div>
-        )}
+        <PageErrorBanner message={store.error} />
 
-        <Table>
-          <TableHeader className="bg-muted/40">
-            <TableRow className="border-border/60 hover:bg-transparent">
-              <TableHead className="w-16 text-center text-xs font-bold text-muted-foreground">ID</TableHead>
-              <TableHead className="w-28 text-xs font-bold text-foreground">Trạng thái</TableHead>
-              <TableHead className="w-28 text-xs font-bold text-foreground">Phân loại</TableHead>
-              <TableHead className="text-xs font-bold text-foreground">Tiêu đề</TableHead>
-              <TableHead className="text-xs font-bold text-foreground">Nội dung</TableHead>
-              <TableHead className="w-40 text-xs font-bold text-foreground">Thời gian</TableHead>
-              <TableHead className="text-right text-xs font-bold text-muted-foreground pr-4">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {store.loading && filteredItems.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-xs text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span>Đang tải danh sách thông báo...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredItems.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-xs text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Bell className="size-8 text-muted-foreground/60" />
-                    <p className="font-semibold text-foreground">{t("notifications.empty")}</p>
-                    <p className="text-[11px] text-muted-foreground">Chưa có thông báo nào phù hợp với bộ lọc.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedItems.map((item) => (
-                <TableRow
-                  key={item.id}
-                  onClick={() => setDetail(item)}
-                  className={cn(
-                    "hover:bg-muted/30 transition-colors border-border/50 cursor-pointer",
-                    !item.read_at && "bg-primary/[0.04]",
+        <ResponsiveDataTable
+          data={paginatedItems}
+          keyExtractor={(item) => item.id}
+          columns={columns}
+          onRowClick={(item) => setDetail(item)}
+          rowClassName={(item) => (!item.read_at ? "bg-primary/[0.04]" : undefined)}
+          loading={store.loading && filteredItems.length === 0}
+          loadingText="Đang tải danh sách thông báo..."
+          emptyIcon={Bell}
+          emptyTitle={t("notifications.empty")}
+          emptyDescription="Chưa có thông báo nào phù hợp với bộ lọc."
+          renderMobileCard={(item) => (
+            <div className="space-y-1.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                  {!item.read_at && (
+                    <Badge className="border-primary/25 bg-primary/10 text-[10px] font-semibold text-primary">
+                      Chưa đọc
+                    </Badge>
                   )}
-                >
-                  {/* ID */}
-                  <TableCell className="text-center font-mono text-[11px] text-muted-foreground">
-                    #{String(item.id).slice(0, 6)}
-                  </TableCell>
+                  {getTypeBadge(item.type)}
+                </div>
+                {renderItemActions(item)}
+              </div>
 
-                  {/* Trạng thái */}
-                  <TableCell>
-                    {item.read_at ? (
-                      <span className="text-xs text-muted-foreground">Đã đọc</span>
-                    ) : (
-                      <Badge className="bg-primary/10 text-primary border-primary/25 hover:bg-primary/15 font-semibold text-[10px]">
-                        Chưa đọc
-                      </Badge>
-                    )}
-                  </TableCell>
+              <p
+                className={cn(
+                  "text-xs",
+                  item.read_at
+                    ? "font-medium text-foreground/90"
+                    : "font-bold text-foreground",
+                )}
+              >
+                {item.title}
+              </p>
 
-                  {/* Loại */}
-                  <TableCell>
-                    {getTypeBadge(item.type)}
-                  </TableCell>
+              {item.body && (
+                <p className="line-clamp-2 text-xs text-muted-foreground">{item.body}</p>
+              )}
 
-                  {/* Tiêu đề */}
-                  <TableCell>
-                    <span className={cn("text-xs", item.read_at ? "text-foreground/90 font-medium" : "text-foreground font-bold")}>
-                      {item.title}
-                    </span>
-                  </TableCell>
+              <p className="font-mono text-[10px] text-muted-foreground">
+                {formatTime(item.created_at, i18n.language)}
+              </p>
+            </div>
+          )}
+        />
 
-                  {/* Nội dung */}
-                  <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-                    {item.body || "—"}
-                  </TableCell>
-
-                  {/* Thời gian */}
-                  <TableCell className="text-xs text-muted-foreground font-mono whitespace-nowrap">
-                    {formatTime(item.created_at, i18n.language)}
-                  </TableCell>
-
-                  {/* Thao tác */}
-                  <TableCell
-                    className="text-right pr-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      {!item.read_at && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title={t("notifications.markRead")}
-                          onClick={() => {
-                            void store.markRead(item.id)
-                            toast.success(t("notifications.markRead"))
-                          }}
-                          className="size-7 rounded-lg text-muted-foreground hover:text-primary cursor-pointer"
-                        >
-                          <Check className="size-3.5" />
-                        </Button>
-                      )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title={t("common.delete")}
-                        onClick={() => {
-                          void store.remove(item.id)
-                          toast.success(t("notifications.deleted"))
-                        }}
-                        className="size-7 rounded-lg text-muted-foreground hover:text-destructive cursor-pointer"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Xem chi tiết"
-                        onClick={() => setDetail(item)}
-                        className="size-7 rounded-lg text-muted-foreground cursor-pointer"
-                      >
-                        <Eye className="size-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        <PageFooter>
-          <div className="flex items-center gap-2">
-            <span>Hiển thị</span>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value))
-                setPage(1)
-              }}
-              className="bg-background border border-border/60 rounded-md px-2 py-1 text-xs text-foreground focus:outline-none"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-            <span>trên tổng số <strong className="text-foreground">{filteredItems.length}</strong> thông báo</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px]">
-              Trang {page} / {totalPages}
-            </span>
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || store.loading}
-              className="h-7 cursor-pointer px-2 text-xs"
-            >
-              <ChevronLeft className="size-3 mr-1" />
-              Trước
-            </Button>
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages || store.loading}
-              className="h-7 cursor-pointer px-2 text-xs"
-            >
-              Sau
-              <ChevronRight className="size-3 ml-1" />
-            </Button>
-          </div>
-        </PageFooter>
+        <PagePagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filteredItems.length}
+          perPage={limit}
+          itemLabel="thông báo"
+          loading={store.loading}
+          onPageChange={setPage}
+          onPerPageChange={setLimit}
+        />
       </PageCard>
 
       {/* Drawer xem chi tiết thông báo */}
@@ -493,7 +442,7 @@ export function NotificationsPage() {
                       Đã đọc vào {formatTime(detail.read_at, i18n.language)}
                     </span>
                   ) : (
-                    <Badge className="bg-primary/10 text-primary border-primary/25 font-semibold text-[10px]">
+                    <Badge className="border-primary/25 bg-primary/10 text-[10px] font-semibold text-primary">
                       Chưa đọc
                     </Badge>
                   )}
@@ -511,7 +460,9 @@ export function NotificationsPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Tiêu đề
                 </span>
-                <p className="mt-1 font-semibold text-foreground text-sm">{detail.title}</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {detail.title}
+                </p>
               </div>
 
               <div>
