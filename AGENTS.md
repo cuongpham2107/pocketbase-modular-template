@@ -21,11 +21,11 @@ Dự án này sử dụng mô hình **BaaS + Dedicated Business Portal** thay v�
 │                    2. BACKEND API & BUSINESS LOGIC (Go)                     │
 │  - PocketBase Core: Tự động sinh CRUD REST APIs, File Storage, Auth, SSE.   │
 │  - Go Extension (internal/):                                                │
-│      ├── routes/   : Custom Endpoints cho các luồng nghiệp vụ phức tạp      │
-│      │               (VD: POST /api/custom/orders/create)                   │
-│      ├── services/ : Nghiệp vụ kiểm tra tồn kho, tính giá, transactions... │
-│      ├── hooks/    : Can thiệp vòng đời dữ liệu (OnRecordCreate, etc.)      │
-│      └── jobs/     : Tác vụ chạy ngầm định kỳ (Cron jobs)                   │
+│      ├── modules/  : Mỗi tính năng 1 thư mục (routes, service, hooks, jobs) │
+│      │               mount tại /api/v1/<module>, bảo vệ bằng rbac.Require  │
+│      ├── platform/ : Hạ tầng dùng chung (module contract, httpx envelope)   │
+│      └── app/      : Wiring — danh sách module, RBAC sync, dev seed         │
+│  - migrations/: Toàn bộ schema + API rules của collection                  │
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │ REST API / SDK (JSON)
        ┌───────────────────────────────┴───────────────────────────────┐
@@ -49,14 +49,21 @@ Dự án này sử dụng mô hình **BaaS + Dedicated Business Portal** thay v�
 
 ```
 pocket-base/
-├── main.go                     # Entrypoint: Khởi tạo PocketBase, hooks, jobs, rbac, và routes
+├── main.go                     # Entrypoint: pocketbase.New + migratecmd + app.Register
 ├── internal/
-│   ├── rbac/                   # Phân quyền động: Catalog, Register Collections, Sync, Service
-│   ├── routes/                 # REST endpoints: /api/v1 (auth, rbac, users) và /api/custom
-│   ├── services/               # Nghiệp vụ xử lý (internal/services/order.go)
-│   ├── hooks/                  # Record/Model lifecycle hooks (internal/hooks/hooks.go)
-│   ├── jobs/                   # Background Cron jobs (internal/jobs/jobs.go)
-│   └── middleware/             # Custom HTTP middlewares
+│   ├── app/app.go              # Danh sách module (thêm module = thêm 1 dòng), RBAC sync, dev seed, SPA /admin
+│   ├── platform/
+│   │   ├── module/             # Contract Module{Name, Label, Permissions, Init, Routes}
+│   │   └── httpx/              # Envelope OK/Fail/Paged, ParsePage
+│   ├── modules/
+│   │   ├── rbac/               # Roles, permissions, rbac.Require/Can, UserDTO dùng chung, Sync catalog
+│   │   ├── auth/               # login, register, refresh, logout(-all), me, theme, password
+│   │   ├── users/              # Quản trị người dùng
+│   │   ├── notifications/      # Thông báo theo user + broadcast
+│   │   ├── audit/              # Audit trail đọc từ request logs của PocketBase
+│   │   ├── media/              # Quyền media + stub endpoints
+│   │   └── orders/             # MODULE MẪU — copy thư mục này khi tạo tính năng mới
+│   └── dev/seed.go             # Tài khoản demo, chỉ chạy khi --dev
 ├── frontend-admin/             # React 19 + Tailwind v4 + shadcn UI + Radix UI + i18n
 │   ├── src/
 │   │   ├── features/           # auth, rbac, users, theme, dashboard, audit, notifications, media
@@ -69,7 +76,7 @@ pocket-base/
 ├── pb_public/                  # Static frontend files served bởi PocketBase
 │   └── admin/                  # Business Admin Portal đã build (truy cập tại http://127.0.0.1:8090/admin/)
 ├── pb_data/                    # SQLite database files (ignored in git and air)
-├── migrations/                 # File-based Go migrations
+├── migrations/                 # Go migrations: schema + API rules (Studio tự sinh file mới khi chạy --dev)
 ├── .codegraph/                 # CodeGraph knowledge graph index
 ├── .air.toml                   # Live hot-reload config cho Go backend
 ├── Makefile                    # Điều khiển toàn bộ dự án (make dev, make run, make build...)
@@ -172,11 +179,16 @@ _(Không còn phải lo lắng về việc merge code hay xung đột giao diệ
        return txApp.Save(record)
    })
    ```
-5. **Custom Actions / Endpoints:** Đăng ký các endpoints nghiệp vụ bên dưới group `/api/custom` trong [internal/routes/routes.go](file:///Users/cuongpham/go/pocket-base/internal/routes/routes.go), và bọc middleware xác thực:
+5. **Thêm tính năng = thêm module:** copy `internal/modules/orders/`, đổi tên, khai báo `Permissions` và `Routes`, rồi thêm `<pkg>.Module` vào `features` trong [internal/app/app.go](internal/app/app.go). Quyền khai báo trong module được tự đồng bộ vào DB khi khởi động (role `admin` luôn có đủ quyền).
+6. **Mọi route phải có quyền:** group bind `apis.RequireAuth()`, từng route bind `rbac.Require(PermXxx)`. Route thiếu `rbac.Require` là lỗi review.
    ```go
-   g := se.Router.Group("/api/custom")
-   g.Bind(apis.RequireAuth())
+   g := api.Group("/orders").Bind(apis.RequireAuth())
+   g.POST("/{id}/confirm", h.confirm).Bind(rbac.Require(PermConfirm))
    ```
+7. **Phân lớp trong module:** `handler.go` chỉ lo HTTP (bind → service → `httpx`), `service.go` chứa nghiệp vụ và transaction, không import gì về HTTP. Test service bằng `tests.NewTestApp()` + blank import `migrations`.
+8. **Phụ thuộc:** `modules → platform`. Module không import lẫn nhau, ngoại lệ duy nhất là `rbac`.
+9. **Schema chỉ nằm trong `migrations/`:** collection, field, index, API rules. Không tạo collection trong hook lúc boot. Rule ghi mặc định `nil` (chỉ superuser) — nghiệp vụ ghi qua `/api/v1`.
+10. **Dữ liệu demo** chỉ ở `internal/dev/seed.go` (chạy khi `--dev`), không bao giờ ghi đè record đã có.
 
 ### Frontend Rules
 
