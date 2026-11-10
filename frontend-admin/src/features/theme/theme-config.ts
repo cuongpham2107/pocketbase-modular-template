@@ -22,6 +22,11 @@ export type FontSize = "xs" | "sm" | "md" | "lg" | "xl"
 export type Density = "tight" | "normal" | "spacious"
 export type NavLayout = "sidebar-collapsible" | "sidebar-fixed" | "top"
 export type SidebarWidth = "16rem" | "18rem" | "20rem" | "22rem" | "24rem"
+export type ThemeMode = "light" | "dark" | "system"
+export type SidebarVariant = "sidebar" | "floating" | "inset"
+export type SidebarCollapsible = "icon" | "offcanvas" | "none"
+export type TableDensity = "compact" | "normal" | "comfortable"
+export type CardStyle = "bordered" | "elevated" | "glass"
 
 export interface PaletteDefinition {
   id: PaletteColor
@@ -136,7 +141,7 @@ export const FONT_SIZE_VALUES: Record<FontSize, { label: string; shortLabel: str
 
 export interface ThemeSettings {
   preset: ThemePreset
-  mode: "light" | "dark"
+  mode: ThemeMode
   palette: PaletteColor
   surface: SurfaceType
   radius: BorderRadius
@@ -146,7 +151,14 @@ export interface ThemeSettings {
   density: Density
   navLayout: NavLayout
   sidebarWidth: SidebarWidth
+  sidebarVariant: SidebarVariant
+  sidebarCollapsible: SidebarCollapsible
   stickyTableHeader: boolean
+  tableDensity: TableDensity
+  tableStriped: boolean
+  tableBorders: boolean
+  cardStyle: CardStyle
+  reducedMotion: boolean
 }
 
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
@@ -161,7 +173,14 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   density: "normal",
   navLayout: "sidebar-collapsible",
   sidebarWidth: "18rem",
+  sidebarVariant: "sidebar",
+  sidebarCollapsible: "icon",
   stickyTableHeader: true,
+  tableDensity: "normal",
+  tableStriped: false,
+  tableBorders: false,
+  cardStyle: "bordered",
+  reducedMotion: false,
 }
 
 export const PRESET_DEFAULTS: Record<ThemePreset, Partial<ThemeSettings>> = {

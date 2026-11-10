@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Sun,
   Moon,
+  Monitor,
   Check,
   Sparkles,
   Copy,
@@ -25,6 +26,10 @@ import {
   type FontFamily,
   type FontSize,
   type SidebarWidth,
+  type SidebarVariant,
+  type SidebarCollapsible,
+  type TableDensity,
+  type CardStyle,
 } from "./theme-config"
 
 export function ThemeStudio() {
@@ -40,7 +45,7 @@ export function ThemeStudio() {
   } = useThemeCustomizer()
 
   const [copied, setCopied] = React.useState(false)
-  const [activeTab, setActiveTab] = React.useState<"all" | "style" | "layout">("all")
+  const [activeTab, setActiveTab] = React.useState<"all" | "style" | "layout" | "table">("all")
 
   const handleCopyCss = () => {
     navigator.clipboard.writeText(exportCss())
@@ -50,7 +55,7 @@ export function ThemeStudio() {
 
   return (
     <div className="relative">
-      {/* Header Palette Icon Button Only (No Text) */}
+      {/* Header Palette Icon Button Only */}
       <Button
         variant="outline"
         size="icon"
@@ -85,7 +90,7 @@ export function ThemeStudio() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ duration: 0.16, ease: "easeOut" }}
-              className="absolute right-0 top-10 z-50 w-[360px] sm:w-[420px] max-w-[calc(100vw-1.5rem)] max-h-[85vh] overflow-y-auto rounded-2xl border border-border/80 bg-card/98 backdrop-blur-xl shadow-2xl p-4 sm:p-5 text-foreground space-y-4 sm:space-y-5"
+              className="absolute right-0 top-10 z-50 w-[360px] sm:w-[430px] max-w-[calc(100vw-1.5rem)] max-h-[85vh] overflow-y-auto rounded-2xl border border-border/80 bg-card/98 backdrop-blur-xl shadow-2xl p-4 sm:p-5 text-foreground space-y-4 sm:space-y-5"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-border/60">
@@ -96,7 +101,7 @@ export function ThemeStudio() {
                   <div>
                     <h3 className="font-bold text-sm tracking-tight">Theme Studio</h3>
                     <p className="text-[11px] text-muted-foreground">
-                      Tùy biến thời gian thực chuẩn Filament
+                      Tùy biến giao diện, bố cục &amp; bảng dữ liệu thời gian thực
                     </p>
                   </div>
                 </div>
@@ -105,7 +110,7 @@ export function ThemeStudio() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-7 text-muted-foreground hover:text-foreground"
+                    className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
                     onClick={resetToDefault}
                     title="Khôi phục mặc định"
                   >
@@ -114,7 +119,7 @@ export function ThemeStudio() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-7 text-muted-foreground hover:text-foreground"
+                    className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
                     onClick={() => setIsOpen(false)}
                     title="Đóng"
                   >
@@ -124,18 +129,20 @@ export function ThemeStudio() {
               </div>
 
               {/* Tab Navigation */}
-              <div className="flex rounded-xl bg-muted/60 p-1 text-xs">
+              <div className="grid grid-cols-4 gap-1 rounded-xl bg-muted/60 p-1 text-xs">
                 {(
                   [
                     { id: "all", label: "Tất cả" },
                     { id: "style", label: "Phong cách" },
-                    { id: "layout", label: "Bố cục & Khung" },
+                    { id: "layout", label: "Bố cục" },
+                    { id: "table", label: "Bảng dữ liệu" },
                   ] as const
                 ).map((tab) => (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 rounded-lg py-1.5 text-center font-medium transition-all ${
+                    className={`rounded-lg py-1.5 text-center text-[11px] font-medium transition-all cursor-pointer ${
                       activeTab === tab.id
                         ? "bg-card text-foreground shadow-xs font-semibold"
                         : "text-muted-foreground hover:text-foreground"
@@ -146,384 +153,654 @@ export function ThemeStudio() {
                 ))}
               </div>
 
-              {/* Section 1: Dark / Light Mode Segmented Control */}
+              {/* Section 1: Light / Dark / System Mode */}
               <section className="space-y-2">
                 <label className="text-xs font-semibold text-foreground">Chế độ hiển thị</label>
-                <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
                   <button
                     type="button"
                     onClick={() => updateSetting("mode", "light")}
-                    className={`flex items-center justify-center gap-2 rounded-lg py-1.5 text-xs font-medium transition-all ${
+                    className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-all cursor-pointer ${
                       settings.mode === "light"
                         ? "bg-card text-foreground shadow-xs font-bold"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <Sun className="size-4 text-amber-500" />
-                    <span>Giao diện Sáng</span>
+                    <Sun className="size-3.5 text-amber-500" />
+                    <span>Sáng</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => updateSetting("mode", "dark")}
-                    className={`flex items-center justify-center gap-2 rounded-lg py-1.5 text-xs font-medium transition-all ${
+                    className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-all cursor-pointer ${
                       settings.mode === "dark"
                         ? "bg-card text-foreground shadow-xs font-bold"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <Moon className="size-4 text-primary" />
-                    <span>Giao diện Tối</span>
+                    <Moon className="size-3.5 text-primary" />
+                    <span>Tối</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateSetting("mode", "system")}
+                    className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-all cursor-pointer ${
+                      settings.mode === "system"
+                        ? "bg-card text-foreground shadow-xs font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Monitor className="size-3.5 text-emerald-500" />
+                    <span>Hệ thống</span>
                   </button>
                 </div>
               </section>
 
-              {/* Section 2: Presets */}
+              {/* ========================================================= */}
+              {/* TAB: PHONG CÁCH (STYLE)                                   */}
+              {/* ========================================================= */}
               {(activeTab === "all" || activeTab === "style") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Preset Thiết Kế</span>
-                    <Badge variant="outline" className="text-[10px] font-mono capitalize">
-                      {settings.preset}
-                    </Badge>
-                  </div>
+                <>
+                  {/* Presets */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Preset Thiết Kế</span>
+                      <Badge variant="outline" className="text-[10px] font-mono capitalize">
+                        {settings.preset}
+                      </Badge>
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: "modern", name: "Modern", desc: "Cân bằng & Tinh tế" },
-                      { id: "precision", name: "Precision", desc: "Vuông vắn kỹ thuật" },
-                      { id: "velvet", name: "Velvet", desc: "Mềm mại & Bo tròn" },
-                      { id: "obsidian", name: "Obsidian", desc: "Tương phản sâu" },
-                    ].map((p) => {
-                      const isActive = settings.preset === p.id
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => applyPreset(p.id as any)}
-                          className={`rounded-xl border p-2.5 text-left transition-all ${
-                            isActive
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "border-border hover:border-border/80 hover:bg-muted/30"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold">{p.name}</span>
-                            {isActive && <Check className="size-3 text-primary" />}
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{p.desc}</p>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Section 3: Primary Palette */}
-              {(activeTab === "all" || activeTab === "style") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Bảng màu Primary</span>
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      {PALETTES[settings.palette]?.label}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2">
-                    {(Object.keys(PALETTES) as PaletteColor[]).map((key) => {
-                      const pal = PALETTES[key]
-                      const isSelected = settings.palette === key
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => updateSetting("palette", key)}
-                          className={`group flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all ${
-                            isSelected
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "border-border hover:border-border/80"
-                          }`}
-                        >
-                          <div
-                            className="size-5 rounded-full shadow-xs flex items-center justify-center transition-transform group-hover:scale-110"
-                            style={{ backgroundColor: pal.hex }}
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: "modern", name: "Modern", desc: "Cân bằng & Tinh tế" },
+                        { id: "precision", name: "Precision", desc: "Vuông vắn kỹ thuật" },
+                        { id: "velvet", name: "Velvet", desc: "Mềm mại & Bo tròn" },
+                        { id: "obsidian", name: "Obsidian", desc: "Tương phản sâu" },
+                      ].map((p) => {
+                        const isActive = settings.preset === p.id
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => applyPreset(p.id as any)}
+                            className={`rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
+                              isActive
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border hover:border-border/80 hover:bg-muted/30"
+                            }`}
                           >
-                            {isSelected && <Check className="size-3 text-white" />}
-                          </div>
-                          <span className="text-[10px] font-medium truncate w-full">
-                            {pal.label.split(" ")[0]}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">{p.name}</span>
+                              {isActive && <Check className="size-3 text-primary" />}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{p.desc}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Primary Palette */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Bảng màu Primary</span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {PALETTES[settings.palette]?.label}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {(Object.keys(PALETTES) as PaletteColor[]).map((key) => {
+                        const pal = PALETTES[key]
+                        const isSelected = settings.palette === key
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => updateSetting("palette", key)}
+                            className={`group flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border hover:border-border/80"
+                            }`}
+                          >
+                            <div
+                              className="size-5 rounded-full shadow-xs flex items-center justify-center transition-transform group-hover:scale-110"
+                              style={{ backgroundColor: pal.hex }}
+                            >
+                              {isSelected && <Check className="size-3 text-white" />}
+                            </div>
+                            <span className="text-[10px] font-medium truncate w-full">
+                              {pal.label.split(" ")[0]}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Corner Radius */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Độ bo góc (Radius)</span>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                        {RADIUS_VALUES[settings.radius]}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-6 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(["none", "sm", "md", "lg", "xl", "full"] as BorderRadius[]).map((rad) => {
+                        const isActive = settings.radius === rad
+                        return (
+                          <button
+                            key={rad}
+                            type="button"
+                            onClick={() => updateSetting("radius", rad)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium uppercase transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {rad}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Surface Tint */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Tông màu nền (Surface)</span>
+                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                        {settings.surface}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(["default", "linen", "slate", "stone", "pure"] as SurfaceType[]).map((s) => {
+                        const isActive = settings.surface === s
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => updateSetting("surface", s)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium capitalize transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Card Style */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Kiểu khung thẻ (Card Style)</span>
+                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                        {settings.cardStyle || "bordered"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(
+                        [
+                          { id: "bordered", label: "Viền mảnh" },
+                          { id: "elevated", label: "Đổ bóng nổi" },
+                          { id: "glass", label: "Kính mờ" },
+                        ] as { id: CardStyle; label: string }[]
+                      ).map((c) => {
+                        const isActive = (settings.cardStyle || "bordered") === c.id
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => updateSetting("cardStyle", c.id)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {c.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Typography */}
+                  <section className="space-y-2">
+                    <span className="text-xs font-semibold text-foreground">Phông chữ hiển thị</span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(Object.keys(FONT_DEFINITIONS) as FontFamily[]).map((key) => {
+                        const font = FONT_DEFINITIONS[key]
+                        const isActive = settings.fontFamily === key
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => updateSetting("fontFamily", key)}
+                            className={`flex items-center justify-between rounded-xl border p-2 text-left transition-all cursor-pointer ${
+                              isActive
+                                ? "border-primary bg-primary/5 ring-1 ring-primary font-semibold"
+                                : "border-border hover:border-border/80"
+                            }`}
+                          >
+                            <span className="text-xs">{font.label}</span>
+                            {isActive && <Check className="size-3 text-primary" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Font Size */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Cỡ chữ (Font Size)</span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {FONT_SIZE_VALUES[settings.fontSize || "md"]?.label}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(Object.keys(FONT_SIZE_VALUES) as FontSize[]).map((sizeKey) => {
+                        const def = FONT_SIZE_VALUES[sizeKey]
+                        const isActive = (settings.fontSize || "md") === sizeKey
+                        return (
+                          <button
+                            key={sizeKey}
+                            type="button"
+                            onClick={() => updateSetting("fontSize", sizeKey)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            title={def.label}
+                          >
+                            {def.shortLabel}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Reduced Motion */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Hiệu ứng chuyển động (Animations)
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {settings.reducedMotion ? "Tắt (Tức thì)" : "Mượt mà"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("reducedMotion", false)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          !settings.reducedMotion
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Bật (Mượt mà)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("reducedMotion", true)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          settings.reducedMotion
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Tắt (Phản hồi tức thì)
+                      </button>
+                    </div>
+                  </section>
+                </>
               )}
 
-              {/* Section 4: Corner Radius */}
-              {(activeTab === "all" || activeTab === "style") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Độ bo góc (Radius)</span>
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
-                      {RADIUS_VALUES[settings.radius]}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-6 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    {(["none", "sm", "md", "lg", "xl", "full"] as BorderRadius[]).map((rad) => {
-                      const isActive = settings.radius === rad
-                      return (
-                        <button
-                          key={rad}
-                          type="button"
-                          onClick={() => updateSetting("radius", rad)}
-                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium uppercase transition-all ${
-                            isActive
-                              ? "bg-card text-foreground shadow-xs font-bold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {rad}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Section 5: Surface Tint */}
-              {(activeTab === "all" || activeTab === "style") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Tông màu nền (Surface)</span>
-                    <span className="text-[11px] font-medium text-muted-foreground capitalize">
-                      {settings.surface}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    {(["default", "linen", "slate", "stone", "pure"] as SurfaceType[]).map((s) => {
-                      const isActive = settings.surface === s
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => updateSetting("surface", s)}
-                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium capitalize transition-all ${
-                            isActive
-                              ? "bg-card text-foreground shadow-xs font-bold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Section 6: Typography */}
-              {(activeTab === "all" || activeTab === "style") && (
-                <section className="space-y-2">
-                  <span className="text-xs font-semibold text-foreground">Phông chữ hiển thị</span>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {(Object.keys(FONT_DEFINITIONS) as FontFamily[]).map((key) => {
-                      const font = FONT_DEFINITIONS[key]
-                      const isActive = settings.fontFamily === key
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => updateSetting("fontFamily", key)}
-                          className={`flex items-center justify-between rounded-xl border p-2 text-left transition-all ${
-                            isActive
-                              ? "border-primary bg-primary/5 ring-1 ring-primary font-semibold"
-                              : "border-border hover:border-border/80"
-                          }`}
-                        >
-                          <span className="text-xs">{font.label}</span>
-                          {isActive && <Check className="size-3 text-primary" />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Section 6B: Font Size */}
-              {(activeTab === "all" || activeTab === "style") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Cỡ chữ (Font Size)</span>
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      {FONT_SIZE_VALUES[settings.fontSize || "md"]?.label}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    {(Object.keys(FONT_SIZE_VALUES) as FontSize[]).map((sizeKey) => {
-                      const def = FONT_SIZE_VALUES[sizeKey]
-                      const isActive = (settings.fontSize || "md") === sizeKey
-                      return (
-                        <button
-                          key={sizeKey}
-                          type="button"
-                          onClick={() => updateSetting("fontSize", sizeKey)}
-                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
-                            isActive
-                              ? "bg-card text-foreground shadow-xs font-bold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                          title={def.label}
-                        >
-                          {def.shortLabel}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Section 7: Content Width */}
+              {/* ========================================================= */}
+              {/* TAB: BỐ CỤC (LAYOUT & SIDEBAR)                            */}
+              {/* ========================================================= */}
               {(activeTab === "all" || activeTab === "layout") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Độ rộng nội dung</span>
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
-                      {settings.contentWidth}
-                    </span>
-                  </div>
+                <>
+                  {/* Sidebar Variant */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Kiểu dáng Sidebar</span>
+                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                        {settings.sidebarVariant || "sidebar"}
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    {(["full", "90", "80", "70", "60"] as ContentWidth[]).map((width) => {
-                      const isActive = settings.contentWidth === width
-                      return (
-                        <button
-                          key={width}
-                          type="button"
-                          onClick={() => updateSetting("contentWidth", width)}
-                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium uppercase transition-all ${
-                            isActive
-                              ? "bg-card text-foreground shadow-xs font-bold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {width === "full" ? "100%" : `${width}%`}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
+                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(
+                        [
+                          { id: "sidebar", label: "Cổ điển" },
+                          { id: "floating", label: "Nổi (Floating)" },
+                          { id: "inset", label: "Lồng khung (Inset)" },
+                        ] as { id: SidebarVariant; label: string }[]
+                      ).map((v) => {
+                        const isActive = (settings.sidebarVariant || "sidebar") === v.id
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => updateSetting("sidebarVariant", v.id)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {v.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Sidebar Collapsible Mode */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Chế độ thu gọn Sidebar</span>
+                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                        {settings.sidebarCollapsible || "icon"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(
+                        [
+                          { id: "icon", label: "Thu về Icon" },
+                          { id: "offcanvas", label: "Ẩn hẳn" },
+                          { id: "none", label: "Luôn mở" },
+                        ] as { id: SidebarCollapsible; label: string }[]
+                      ).map((c) => {
+                        const isActive = (settings.sidebarCollapsible || "icon") === c.id
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => updateSetting("sidebarCollapsible", c.id)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {c.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Sidebar Width */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Độ rộng Sidebar</span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {settings.sidebarWidth}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(["16rem", "18rem", "20rem", "22rem", "24rem"] as SidebarWidth[]).map((sw) => {
+                        const isActive = settings.sidebarWidth === sw
+                        return (
+                          <button
+                            key={sw}
+                            type="button"
+                            onClick={() => updateSetting("sidebarWidth", sw)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {sw}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Content Width */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Độ rộng nội dung</span>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                        {settings.contentWidth}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(["full", "90", "80", "70", "60"] as ContentWidth[]).map((width) => {
+                        const isActive = settings.contentWidth === width
+                        return (
+                          <button
+                            key={width}
+                            type="button"
+                            onClick={() => updateSetting("contentWidth", width)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium uppercase transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {width === "full" ? "100%" : `${width}%`}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Page Density */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Mật độ khung trang</span>
+                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                        {settings.density}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(
+                        [
+                          { id: "tight", label: "Gọn gàng" },
+                          { id: "normal", label: "Tiêu chuẩn" },
+                          { id: "spacious", label: "Rộng rãi" },
+                        ] as const
+                      ).map((d) => {
+                        const isActive = settings.density === d.id
+                        return (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => updateSetting("density", d.id)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {d.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+                </>
               )}
 
-              {/* Section 8: Sidebar Width */}
-              {(activeTab === "all" || activeTab === "layout") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Độ rộng Sidebar</span>
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      {settings.sidebarWidth}
-                    </span>
-                  </div>
+              {/* ========================================================= */}
+              {/* TAB: BẢNG DỮ LIỆU (TABLE EXPERIENCE)                      */}
+              {/* ========================================================= */}
+              {(activeTab === "all" || activeTab === "table") && (
+                <>
+                  {/* Sticky Table Header */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Ghim tiêu đề bảng (Sticky Header)
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {settings.stickyTableHeader ? "Đang bật" : "Đang tắt"}
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    {(["16rem", "18rem", "20rem", "22rem", "24rem"] as SidebarWidth[]).map((sw) => {
-                      const isActive = settings.sidebarWidth === sw
-                      return (
-                        <button
-                          key={sw}
-                          type="button"
-                          onClick={() => updateSetting("sidebarWidth", sw)}
-                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all ${
-                            isActive
-                              ? "bg-card text-foreground shadow-xs font-bold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {sw}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
+                    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("stickyTableHeader", true)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          settings.stickyTableHeader
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Bật (Ghim tiêu đề)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("stickyTableHeader", false)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          !settings.stickyTableHeader
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Tắt (Cuộn thường)
+                      </button>
+                    </div>
+                  </section>
 
-              {/* Section 9: Density */}
-              {(activeTab === "all" || activeTab === "layout") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Mật độ hiển thị</span>
-                    <span className="text-[11px] font-medium text-muted-foreground capitalize">
-                      {settings.density}
-                    </span>
-                  </div>
+                  {/* Table Row Density */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Chiều cao dòng bảng (Row Density)
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                        {settings.tableDensity || "normal"}
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    {(
-                      [
-                        { id: "tight", label: "Gọn gàng" },
-                        { id: "normal", label: "Tiêu chuẩn" },
-                        { id: "spacious", label: "Rộng rãi" },
-                      ] as const
-                    ).map((d) => {
-                      const isActive = settings.density === d.id
-                      return (
-                        <button
-                          key={d.id}
-                          type="button"
-                          onClick={() => updateSetting("density", d.id)}
-                          className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all ${
-                            isActive
-                              ? "bg-card text-foreground shadow-xs font-bold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {d.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
+                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      {(
+                        [
+                          { id: "compact", label: "Siêu gọn" },
+                          { id: "normal", label: "Chuẩn" },
+                          { id: "comfortable", label: "Thoáng" },
+                        ] as { id: TableDensity; label: string }[]
+                      ).map((td) => {
+                        const isActive = (settings.tableDensity || "normal") === td.id
+                        return (
+                          <button
+                            key={td.id}
+                            type="button"
+                            onClick={() => updateSetting("tableDensity", td.id)}
+                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-card text-foreground shadow-xs font-bold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {td.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
 
-              {/* Section 10: Sticky Table Header */}
-              {(activeTab === "all" || activeTab === "layout") && (
-                <section className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">
-                      Cố định tiêu đề bảng (Sticky Header)
-                    </span>
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      {settings.stickyTableHeader ? "Đang bật" : "Đang tắt"}
-                    </span>
-                  </div>
+                  {/* Table Zebra Stripes */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Màu dòng xen kẽ (Zebra Stripes)
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {settings.tableStriped ? "Đang bật" : "Đang tắt"}
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                    <button
-                      type="button"
-                      onClick={() => updateSetting("stickyTableHeader", true)}
-                      className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
-                        settings.stickyTableHeader
-                          ? "bg-card text-foreground shadow-xs font-bold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Bật (Ghim tiêu đề)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateSetting("stickyTableHeader", false)}
-                      className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
-                        !settings.stickyTableHeader
-                          ? "bg-card text-foreground shadow-xs font-bold"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Tắt (Cuộn thường)
-                    </button>
-                  </div>
-                </section>
+                    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("tableStriped", true)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          settings.tableStriped
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Bật (Xen kẽ dòng)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("tableStriped", false)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          !settings.tableStriped
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Tắt (Đồng màu)
+                      </button>
+                    </div>
+                  </section>
+
+                  {/* Table Cell Borders */}
+                  <section className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Đường kẻ dọc giữa các cột (Grid Borders)
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {settings.tableBorders ? "Đang bật" : "Đang tắt"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1">
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("tableBorders", true)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          settings.tableBorders
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Bật (Kẻ ô dọc)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateSetting("tableBorders", false)}
+                        className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
+                          !settings.tableBorders
+                            ? "bg-card text-foreground shadow-xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Tắt (Chỉ kẻ ngang)
+                      </button>
+                    </div>
+                  </section>
+                </>
               )}
 
               {/* Footer Actions: Copy CSS Variables */}
@@ -532,7 +809,7 @@ export function ThemeStudio() {
                   variant="outline"
                   size="sm"
                   onClick={handleCopyCss}
-                  className="w-full text-xs font-medium gap-1.5 rounded-xl border-border/80 shadow-2xs"
+                  className="w-full text-xs font-medium gap-1.5 rounded-xl border-border/80 shadow-2xs cursor-pointer"
                 >
                   {copied ? (
                     <>

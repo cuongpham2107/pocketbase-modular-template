@@ -85,72 +85,90 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Apply CSS variables & DOM modifications dynamically
   React.useEffect(() => {
     const root = document.documentElement
-    const isDark = settings.mode === "dark"
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
 
-    // 1. Dark class
-    if (isDark) {
-      root.classList.add("dark")
-    } else {
-      root.classList.remove("dark")
+    const applyThemeToDom = () => {
+      const isDark =
+        settings.mode === "dark" ||
+        (settings.mode === "system" && mediaQuery.matches)
+
+      // 1. Dark class
+      if (isDark) {
+        root.classList.add("dark")
+      } else {
+        root.classList.remove("dark")
+      }
+
+      // 2. Palette primary colors
+      const pal = PALETTES[settings.palette] || PALETTES.blue
+      const primary = isDark ? pal.darkPrimary : pal.lightPrimary
+      const ring = isDark ? pal.darkRing : pal.lightRing
+
+      root.style.setProperty("--primary", primary)
+      root.style.setProperty("--ring", ring)
+      root.style.setProperty("--sidebar-primary", primary)
+
+      // 3. Border radius
+      const rad = RADIUS_VALUES[settings.radius] || RADIUS_VALUES.md
+      root.style.setProperty("--radius", rad)
+
+      // 4. Background Surface
+      switch (settings.surface) {
+        case "linen":
+          root.style.setProperty("--background", isDark ? "oklch(0.18 0.02 60)" : "oklch(0.985 0.015 80)")
+          root.style.setProperty("--card", isDark ? "oklch(0.22 0.025 60)" : "oklch(1 0 0)")
+          root.style.setProperty("--sidebar", isDark ? "oklch(0.16 0.02 60)" : "oklch(0.975 0.015 80)")
+          break
+        case "slate":
+          root.style.setProperty("--background", isDark ? "oklch(0.14 0.03 240)" : "oklch(0.985 0.01 240)")
+          root.style.setProperty("--card", isDark ? "oklch(0.18 0.035 240)" : "oklch(1 0 0)")
+          root.style.setProperty("--sidebar", isDark ? "oklch(0.12 0.03 240)" : "oklch(0.975 0.01 240)")
+          break
+        case "stone":
+          root.style.setProperty("--background", isDark ? "oklch(0.16 0.015 80)" : "oklch(0.98 0.01 70)")
+          root.style.setProperty("--card", isDark ? "oklch(0.20 0.02 80)" : "oklch(1 0 0)")
+          root.style.setProperty("--sidebar", isDark ? "oklch(0.14 0.015 80)" : "oklch(0.97 0.01 70)")
+          break
+        case "pure":
+          root.style.setProperty("--background", isDark ? "oklch(0.08 0 0)" : "oklch(1 0 0)")
+          root.style.setProperty("--card", isDark ? "oklch(0.13 0 0)" : "oklch(0.985 0 0)")
+          root.style.setProperty("--sidebar", isDark ? "oklch(0.05 0 0)" : "oklch(0.99 0 0)")
+          break
+        case "default":
+        default:
+          root.style.removeProperty("--background")
+          root.style.removeProperty("--card")
+          root.style.removeProperty("--sidebar")
+          break
+      }
+
+      // 5. Font family & Font size
+      const font = FONT_DEFINITIONS[settings.fontFamily]
+      if (font) {
+        document.body.style.fontFamily = font.cssFamily
+      }
+      const fontSizeDef = FONT_SIZE_VALUES[settings.fontSize] || FONT_SIZE_VALUES.md
+      root.style.fontSize = fontSizeDef.px
+      root.style.setProperty("--font-scale", String(fontSizeDef.scale))
+
+      // 6. Sidebar width CSS variable
+      root.style.setProperty("--sidebar-width", settings.sidebarWidth)
+
+      // 7. Table & UI Attributes
+      root.dataset.stickyHeader = settings.stickyTableHeader ? "true" : "false"
+      root.dataset.tableDensity = settings.tableDensity || "normal"
+      root.dataset.tableStriped = settings.tableStriped ? "true" : "false"
+      root.dataset.tableBorders = settings.tableBorders ? "true" : "false"
+      root.dataset.cardStyle = settings.cardStyle || "bordered"
+      root.dataset.reducedMotion = settings.reducedMotion ? "true" : "false"
     }
 
-    // 2. Palette primary colors
-    const pal = PALETTES[settings.palette] || PALETTES.blue
-    const primary = isDark ? pal.darkPrimary : pal.lightPrimary
-    const ring = isDark ? pal.darkRing : pal.lightRing
+    applyThemeToDom()
 
-    root.style.setProperty("--primary", primary)
-    root.style.setProperty("--ring", ring)
-    root.style.setProperty("--sidebar-primary", primary)
-
-    // 3. Border radius
-    const rad = RADIUS_VALUES[settings.radius] || RADIUS_VALUES.md
-    root.style.setProperty("--radius", rad)
-
-    // 4. Background Surface
-    switch (settings.surface) {
-      case "linen":
-        root.style.setProperty("--background", isDark ? "oklch(0.18 0.02 60)" : "oklch(0.985 0.015 80)")
-        root.style.setProperty("--card", isDark ? "oklch(0.22 0.025 60)" : "oklch(1 0 0)")
-        root.style.setProperty("--sidebar", isDark ? "oklch(0.16 0.02 60)" : "oklch(0.975 0.015 80)")
-        break
-      case "slate":
-        root.style.setProperty("--background", isDark ? "oklch(0.14 0.03 240)" : "oklch(0.985 0.01 240)")
-        root.style.setProperty("--card", isDark ? "oklch(0.18 0.035 240)" : "oklch(1 0 0)")
-        root.style.setProperty("--sidebar", isDark ? "oklch(0.12 0.03 240)" : "oklch(0.975 0.01 240)")
-        break
-      case "stone":
-        root.style.setProperty("--background", isDark ? "oklch(0.16 0.015 80)" : "oklch(0.98 0.01 70)")
-        root.style.setProperty("--card", isDark ? "oklch(0.20 0.02 80)" : "oklch(1 0 0)")
-        root.style.setProperty("--sidebar", isDark ? "oklch(0.14 0.015 80)" : "oklch(0.97 0.01 70)")
-        break
-      case "pure":
-        root.style.setProperty("--background", isDark ? "oklch(0.08 0 0)" : "oklch(1 0 0)")
-        root.style.setProperty("--card", isDark ? "oklch(0.13 0 0)" : "oklch(0.985 0 0)")
-        root.style.setProperty("--sidebar", isDark ? "oklch(0.05 0 0)" : "oklch(0.99 0 0)")
-        break
-      case "default":
-      default:
-        root.style.removeProperty("--background")
-        root.style.removeProperty("--card")
-        root.style.removeProperty("--sidebar")
-        break
+    if (settings.mode === "system") {
+      mediaQuery.addEventListener("change", applyThemeToDom)
+      return () => mediaQuery.removeEventListener("change", applyThemeToDom)
     }
-
-    // 5. Font family & Font size
-    const font = FONT_DEFINITIONS[settings.fontFamily]
-    if (font) {
-      document.body.style.fontFamily = font.cssFamily
-    }
-    const fontSizeDef = FONT_SIZE_VALUES[settings.fontSize] || FONT_SIZE_VALUES.md
-    root.style.fontSize = fontSizeDef.px
-    root.style.setProperty("--font-scale", String(fontSizeDef.scale))
-
-    // 6. Sidebar width CSS variable
-    root.style.setProperty("--sidebar-width", settings.sidebarWidth)
-
-    // 7. Sticky Table Header attribute
-    root.dataset.stickyHeader = settings.stickyTableHeader ? "true" : "false"
   }, [settings])
 
   const updateSetting = React.useCallback(<K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) => {

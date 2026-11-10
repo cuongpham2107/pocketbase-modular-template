@@ -88,6 +88,8 @@ export function AppSidebar({
   currentUser,
   onLogout,
   sidebarWidth,
+  collapsible = "icon",
+  variant = "sidebar",
   ...props
 }: AppSidebarProps) {
   const { t } = useTranslation()
@@ -114,8 +116,9 @@ export function AppSidebar({
 
   return (
     <Sidebar
-      collapsible="icon"
-      className="border-r border-border/60 bg-sidebar"
+      collapsible={collapsible}
+      variant={variant}
+      className={variant === "sidebar" ? "border-r border-border/60 bg-sidebar" : "bg-sidebar"}
       style={
         {
           "--sidebar-width": sidebarWidth,
@@ -258,7 +261,7 @@ export function AppSidebar({
         )}
       </SidebarFooter>
 
-      <SidebarRail />
+      {collapsible !== "none" && <SidebarRail />}
     </Sidebar>
   )
 }

@@ -153,3 +153,54 @@ html[data-sticky-header="true"] [data-slot="table-header"] {
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 0 0 var(--border);
 }
+
+/* Table Row Density (compact | normal | comfortable) */
+html[data-table-density="compact"] [data-slot="table-head"] {
+  height: 2rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+html[data-table-density="compact"] [data-slot="table-cell"] {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+html[data-table-density="comfortable"] [data-slot="table-head"] {
+  height: 2.85rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+html[data-table-density="comfortable"] [data-slot="table-cell"] {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+/* Table Zebra Stripes */
+html[data-table-striped="true"] [data-slot="table-body"] tr:nth-child(even) {
+  background-color: color-mix(in oklab, var(--muted) 38%, transparent);
+}
+
+/* Table Vertical Cell Borders */
+html[data-table-borders="true"] [data-slot="table-head"]:not(:last-child),
+html[data-table-borders="true"] [data-slot="table-cell"]:not(:last-child) {
+  border-right: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+}
+
+/* Card Style (bordered | elevated | glass) */
+html[data-card-style="elevated"] [data-slot="card"] {
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+}
+html[data-card-style="glass"] [data-slot="card"] {
+  background-color: color-mix(in oklab, var(--card) 78%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+/* Reduced Motion */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+

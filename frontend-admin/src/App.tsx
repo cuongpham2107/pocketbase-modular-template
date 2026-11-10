@@ -398,17 +398,23 @@ function AppContent() {
           <AppSidebar
             currentUser={currentUser}
             onLogout={handleLogout}
+            variant={settings.sidebarVariant || "sidebar"}
+            collapsible={settings.sidebarCollapsible || "icon"}
           />
 
           {/* Right Main Inset */}
           <SidebarInset className="flex flex-col flex-1 min-w-0">
             {/* Top Sticky Header */}
             <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 bg-background/90 px-4 backdrop-blur-md transition-[width,height] duration-200 ease-in-out">
-              <SidebarTrigger
-                className="-ml-1 cursor-pointer hover:bg-muted"
-                title={t("nav.toggleSidebar")}
-              />
-              <Separator orientation="vertical" className="mr-2 h-4" />
+              {settings.sidebarCollapsible !== "none" && (
+                <>
+                  <SidebarTrigger
+                    className="-ml-1 cursor-pointer hover:bg-muted"
+                    title={t("nav.toggleSidebar")}
+                  />
+                  <Separator orientation="vertical" className="mr-2 h-4" />
+                </>
+              )}
 
               {/* Breadcrumb Navigation */}
               <Breadcrumb className="hidden sm:block">
