@@ -1,7 +1,15 @@
 // Cấu hình theme thuần dữ liệu (type, bảng màu, preset) — tách khỏi Provider để Fast Refresh hoạt động.
 export type ThemePreset = "modern" | "precision" | "velvet" | "obsidian"
 export type PaletteColor = "amber" | "blue" | "forest" | "citrus" | "violet" | "rose" | "teal" | "zinc"
-export type SurfaceType = "default" | "linen" | "slate" | "stone" | "pure"
+export type SurfaceType =
+  | "default"
+  | "slate"
+  | "stone"
+  | "linen"
+  | "sand"
+  | "sage"
+  | "rosewood"
+  | "pure"
 export type BorderRadius = "none" | "sm" | "md" | "lg" | "xl" | "full"
 // Thang phần trăm theo vùng nội dung: luôn thấy thay đổi ở mọi độ phân giải
 // (max-w-5xl/7xl không bao giờ "bắt" trên màn laptop ~1000px nên trước đây
@@ -110,6 +118,182 @@ export const PALETTES: Record<PaletteColor, PaletteDefinition> = {
     darkPrimary: "oklch(0.85 0.01 260)",
     lightRing: "oklch(0.45 0.02 260)",
     darkRing: "oklch(0.85 0.01 260)",
+  },
+}
+
+export interface SurfaceTokens {
+  bg: string
+  card: string
+  muted: string
+  border: string
+  sidebar: string
+}
+
+export interface SurfaceDefinition {
+  id: SurfaceType
+  label: string
+  /** Màu đại diện hiển thị trong vòng tròn chọn màu (giống Bảng màu Primary) */
+  hex: string
+  /** Có phải màu sáng cần dấu check màu tối không */
+  darkCheck?: boolean
+  light: SurfaceTokens
+  dark: SurfaceTokens
+}
+
+export const SURFACES: Record<SurfaceType, SurfaceDefinition> = {
+  default: {
+    id: "default",
+    label: "Cool Default",
+    hex: "#dbeafe",
+    darkCheck: true,
+    light: {
+      bg: "oklch(0.985 0.006 250)",
+      card: "oklch(0.997 0.003 250)",
+      muted: "oklch(0.955 0.016 250)",
+      border: "oklch(0.905 0.016 250)",
+      sidebar: "oklch(0.975 0.01 250)",
+    },
+    dark: {
+      bg: "oklch(0.14 0.02 260)",
+      card: "oklch(0.18 0.025 260)",
+      muted: "oklch(0.23 0.03 260)",
+      border: "oklch(0.27 0.03 260)",
+      sidebar: "oklch(0.16 0.025 260)",
+    },
+  },
+  slate: {
+    id: "slate",
+    label: "Steel Slate",
+    hex: "#64748b",
+    light: {
+      bg: "oklch(0.968 0.012 245)",
+      card: "oklch(0.985 0.008 245)",
+      muted: "oklch(0.93 0.02 245)",
+      border: "oklch(0.875 0.022 245)",
+      sidebar: "oklch(0.952 0.015 245)",
+    },
+    dark: {
+      bg: "oklch(0.135 0.03 245)",
+      card: "oklch(0.175 0.035 245)",
+      muted: "oklch(0.225 0.04 245)",
+      border: "oklch(0.27 0.04 245)",
+      sidebar: "oklch(0.12 0.03 245)",
+    },
+  },
+  stone: {
+    id: "stone",
+    label: "Warm Stone",
+    hex: "#78716c",
+    light: {
+      bg: "oklch(0.968 0.01 75)",
+      card: "oklch(0.986 0.006 75)",
+      muted: "oklch(0.932 0.016 75)",
+      border: "oklch(0.88 0.018 75)",
+      sidebar: "oklch(0.955 0.012 75)",
+    },
+    dark: {
+      bg: "oklch(0.15 0.012 75)",
+      card: "oklch(0.19 0.016 75)",
+      muted: "oklch(0.24 0.02 75)",
+      border: "oklch(0.28 0.02 75)",
+      sidebar: "oklch(0.135 0.012 75)",
+    },
+  },
+  linen: {
+    id: "linen",
+    label: "Cream Linen",
+    hex: "#d6bfa7",
+    darkCheck: true,
+    light: {
+      bg: "oklch(0.972 0.02 80)",
+      card: "oklch(0.988 0.014 80)",
+      muted: "oklch(0.938 0.028 80)",
+      border: "oklch(0.885 0.03 80)",
+      sidebar: "oklch(0.96 0.022 80)",
+    },
+    dark: {
+      bg: "oklch(0.165 0.022 65)",
+      card: "oklch(0.205 0.026 65)",
+      muted: "oklch(0.255 0.03 65)",
+      border: "oklch(0.30 0.03 65)",
+      sidebar: "oklch(0.15 0.02 65)",
+    },
+  },
+  sand: {
+    id: "sand",
+    label: "Golden Sand",
+    hex: "#eab308",
+    light: {
+      bg: "oklch(0.975 0.024 90)",
+      card: "oklch(0.99 0.016 90)",
+      muted: "oklch(0.942 0.035 90)",
+      border: "oklch(0.89 0.038 90)",
+      sidebar: "oklch(0.962 0.028 90)",
+    },
+    dark: {
+      bg: "oklch(0.16 0.028 80)",
+      card: "oklch(0.20 0.032 80)",
+      muted: "oklch(0.25 0.038 80)",
+      border: "oklch(0.295 0.038 80)",
+      sidebar: "oklch(0.145 0.025 80)",
+    },
+  },
+  sage: {
+    id: "sage",
+    label: "Mint Sage",
+    hex: "#34d399",
+    light: {
+      bg: "oklch(0.974 0.016 160)",
+      card: "oklch(0.99 0.01 160)",
+      muted: "oklch(0.94 0.025 160)",
+      border: "oklch(0.888 0.028 160)",
+      sidebar: "oklch(0.96 0.02 160)",
+    },
+    dark: {
+      bg: "oklch(0.145 0.025 160)",
+      card: "oklch(0.185 0.03 160)",
+      muted: "oklch(0.235 0.035 160)",
+      border: "oklch(0.28 0.035 160)",
+      sidebar: "oklch(0.13 0.022 160)",
+    },
+  },
+  rosewood: {
+    id: "rosewood",
+    label: "Rose Mist",
+    hex: "#fb7185",
+    light: {
+      bg: "oklch(0.975 0.016 15)",
+      card: "oklch(0.99 0.01 15)",
+      muted: "oklch(0.942 0.025 15)",
+      border: "oklch(0.892 0.028 15)",
+      sidebar: "oklch(0.962 0.02 15)",
+    },
+    dark: {
+      bg: "oklch(0.15 0.028 15)",
+      card: "oklch(0.19 0.032 15)",
+      muted: "oklch(0.24 0.038 15)",
+      border: "oklch(0.285 0.038 15)",
+      sidebar: "oklch(0.135 0.024 15)",
+    },
+  },
+  pure: {
+    id: "pure",
+    label: "Pure Mono",
+    hex: "#18181b",
+    light: {
+      bg: "oklch(1 0 0)",
+      card: "oklch(1 0 0)",
+      muted: "oklch(0.96 0 0)",
+      border: "oklch(0.90 0 0)",
+      sidebar: "oklch(0.985 0 0)",
+    },
+    dark: {
+      bg: "oklch(0.09 0 0)",
+      card: "oklch(0.13 0 0)",
+      muted: "oklch(0.18 0 0)",
+      border: "oklch(0.23 0 0)",
+      sidebar: "oklch(0.07 0 0)",
+    },
   },
 }
 

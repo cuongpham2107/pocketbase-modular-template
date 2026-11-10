@@ -139,6 +139,19 @@
   font-size: calc(11px * var(--font-scale, 1));
 }
 
+/* Surface-aware Table Colors (Header, Body, Hover, Sticky, Zebra) */
+[data-slot="table-container"] {
+  background-color: var(--card);
+}
+
+[data-slot="table-header"] {
+  background-color: color-mix(in oklab, var(--muted) 72%, var(--card));
+}
+
+[data-slot="table-row"]:hover {
+  background-color: color-mix(in oklab, var(--muted) 55%, var(--card));
+}
+
 /* Sticky Table Header controlled via Theme Studio (html[data-sticky-header="true"]) */
 html[data-sticky-header="true"] [data-slot="table-container"] {
   max-height: calc(100vh - 15.5rem);
@@ -149,7 +162,7 @@ html[data-sticky-header="true"] [data-slot="table-header"] {
   position: sticky;
   top: 0;
   z-index: 20;
-  background-color: color-mix(in oklab, var(--card) 92%, var(--muted));
+  background-color: color-mix(in oklab, var(--muted) 78%, var(--card));
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 0 0 var(--border);
 }

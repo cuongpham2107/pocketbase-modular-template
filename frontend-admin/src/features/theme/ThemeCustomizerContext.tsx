@@ -8,6 +8,7 @@ import {
   PALETTES,
   PRESET_DEFAULTS,
   RADIUS_VALUES,
+  SURFACES,
   type ThemePreset,
   type ThemeSettings,
 } from "./theme-config"
@@ -112,35 +113,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const rad = RADIUS_VALUES[settings.radius] || RADIUS_VALUES.md
       root.style.setProperty("--radius", rad)
 
-      // 4. Background Surface
-      switch (settings.surface) {
-        case "linen":
-          root.style.setProperty("--background", isDark ? "oklch(0.18 0.02 60)" : "oklch(0.985 0.015 80)")
-          root.style.setProperty("--card", isDark ? "oklch(0.22 0.025 60)" : "oklch(1 0 0)")
-          root.style.setProperty("--sidebar", isDark ? "oklch(0.16 0.02 60)" : "oklch(0.975 0.015 80)")
-          break
-        case "slate":
-          root.style.setProperty("--background", isDark ? "oklch(0.14 0.03 240)" : "oklch(0.985 0.01 240)")
-          root.style.setProperty("--card", isDark ? "oklch(0.18 0.035 240)" : "oklch(1 0 0)")
-          root.style.setProperty("--sidebar", isDark ? "oklch(0.12 0.03 240)" : "oklch(0.975 0.01 240)")
-          break
-        case "stone":
-          root.style.setProperty("--background", isDark ? "oklch(0.16 0.015 80)" : "oklch(0.98 0.01 70)")
-          root.style.setProperty("--card", isDark ? "oklch(0.20 0.02 80)" : "oklch(1 0 0)")
-          root.style.setProperty("--sidebar", isDark ? "oklch(0.14 0.015 80)" : "oklch(0.97 0.01 70)")
-          break
-        case "pure":
-          root.style.setProperty("--background", isDark ? "oklch(0.08 0 0)" : "oklch(1 0 0)")
-          root.style.setProperty("--card", isDark ? "oklch(0.13 0 0)" : "oklch(0.985 0 0)")
-          root.style.setProperty("--sidebar", isDark ? "oklch(0.05 0 0)" : "oklch(0.99 0 0)")
-          break
-        case "default":
-        default:
-          root.style.removeProperty("--background")
-          root.style.removeProperty("--card")
-          root.style.removeProperty("--sidebar")
-          break
-      }
+      // 4. Background, Card, Table & Sidebar Surface Tokens
+      const surfaceDef = SURFACES[settings.surface] || SURFACES.default
+      const surfaceTokens = isDark ? surfaceDef.dark : surfaceDef.light
+      root.style.setProperty("--background", surfaceTokens.bg)
+      root.style.setProperty("--card", surfaceTokens.card)
+      root.style.setProperty("--popover", surfaceTokens.card)
+      root.style.setProperty("--muted", surfaceTokens.muted)
+      root.style.setProperty("--secondary", surfaceTokens.muted)
+      root.style.setProperty("--border", surfaceTokens.border)
+      root.style.setProperty("--input", surfaceTokens.border)
+      root.style.setProperty("--sidebar", surfaceTokens.sidebar)
+      root.style.setProperty("--sidebar-border", surfaceTokens.border)
 
       // 5. Font family & Font size
       const font = FONT_DEFINITIONS[settings.fontFamily]

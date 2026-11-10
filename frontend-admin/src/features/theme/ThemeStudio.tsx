@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { useThemeCustomizer } from "./theme-context"
 import {
   PALETTES,
+  SURFACES,
   RADIUS_VALUES,
   FONT_DEFINITIONS,
   FONT_SIZE_VALUES,
@@ -309,30 +310,45 @@ export function ThemeStudio() {
                     </div>
                   </section>
 
-                  {/* Surface Tint */}
+                  {/* Surface Tint (Giống Bảng màu Primary) */}
                   <section className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-foreground">Tông màu nền (Surface)</span>
-                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
-                        {settings.surface}
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {SURFACES[settings.surface]?.label || settings.surface}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-muted/40 p-1">
-                      {(["default", "linen", "slate", "stone", "pure"] as SurfaceType[]).map((s) => {
-                        const isActive = settings.surface === s
+                    <div className="grid grid-cols-4 gap-2">
+                      {(Object.keys(SURFACES) as SurfaceType[]).map((key) => {
+                        const surf = SURFACES[key]
+                        const isSelected = settings.surface === key
                         return (
                           <button
-                            key={s}
+                            key={key}
                             type="button"
-                            onClick={() => updateSetting("surface", s)}
-                            className={`rounded-lg py-1.5 text-center text-[10px] font-medium capitalize transition-all cursor-pointer ${
-                              isActive
-                                ? "bg-card text-foreground shadow-xs font-bold"
-                                : "text-muted-foreground hover:text-foreground"
+                            onClick={() => updateSetting("surface", key)}
+                            className={`group flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border hover:border-border/80"
                             }`}
                           >
-                            {s}
+                            <div
+                              className="size-5 rounded-full border border-black/15 dark:border-white/15 shadow-xs flex items-center justify-center transition-transform group-hover:scale-110"
+                              style={{ backgroundColor: surf.hex }}
+                            >
+                              {isSelected && (
+                                <Check
+                                  className={`size-3 ${
+                                    surf.darkCheck ? "text-slate-900" : "text-white"
+                                  }`}
+                                />
+                              )}
+                            </div>
+                            <span className="text-[10px] font-medium truncate w-full">
+                              {surf.label.split(" ")[1] || surf.label}
+                            </span>
                           </button>
                         )
                       })}
