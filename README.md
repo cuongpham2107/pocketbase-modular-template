@@ -179,7 +179,9 @@ To customize environment variables (`PB_SUPERUSER_EMAIL`, `PB_SUPERUSER_PASSWORD
 
 ---
 
-## 🧩 Adding a New Feature Module
+## 🧩 Adding a New Feature Module (Fast-Track Guide)
+
+> 📖 **For AI Coding Assistants & Developers:** See **[AGENTS.md](./AGENTS.md)** for the complete **5-Step Full-Stack Playbook** (including copy-pasteable Go migration/module templates and React shared UI components like `ResponsiveDataTable`, `PageShell`, `PageSearchInput`, and `ThemeStudio` integration).
 
 1. **Duplicate the reference module:** Copy `internal/modules/orders` to `internal/modules/<your_module>`.
 2. **Define permissions & routes:** Declare your `module.Module` struct with `Permissions`, `Init` (hooks/cron), and `Routes` protected by `rbac.Require(...)`.
@@ -191,3 +193,4 @@ To customize environment variables (`PB_SUPERUSER_EMAIL`, `PB_SUPERUSER_PASSWORD
 ## 📄 License
 
 MIT License © [Cuong Pham](https://github.com/cuongpham2107)
+
