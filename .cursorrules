@@ -1,0 +1,32 @@
+# PocketBase Modular Template — Cursor AI Rules
+
+Always read and follow `AGENTS.md` and `.agents/rules/` before writing or modifying code in this repository.
+
+## Core Architecture
+- **Backend:** Go (`cuongpham2107/pocketbase-custom`) + PocketBase (`ganigeorgiev.com/pocketbase/pocketbase v0.41.1`), SQLite (`./pb_data/`).
+- **Frontend (`/admin/`):** React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui + Radix UI + `react-i18next` (`frontend-admin/`).
+- **Native Studio (`/_/`):** Keep 100% unmodified PocketBase Developer Studio.
+
+## Backend Rules (`internal/`, `migrations/`)
+1. **5-Step Feature Playbook:**
+   - Step 1: Add schema migration in `migrations/`. Keep `CreateRule`, `UpdateRule`, `DeleteRule` as `nil`.
+   - Step 2: Create `internal/modules/<name>/` (`module.go`, `service.go`, `handler.go`, `service_test.go`) modeled after `internal/modules/orders/`.
+   - Step 3: Append `<name>.Module` to `features` in `internal/app/app.go`.
+2. **Layering & Security:**
+   - Every route group under `/api/v1/<name>` MUST bind `apis.RequireAuth()`, and every route MUST bind `rbac.Require(PermXxx)`.
+   - `handler.go` only parses HTTP input and returns `httpx.OK`, `httpx.Paged`, or `httpx.Fail`.
+   - `service.go` holds 100% of business logic and wraps multi-step writes in `app.RunInTransaction(func(txApp core.App) error { ... })`.
+   - Modules must not import each other except `internal/modules/rbac` and `internal/modules/notifications`.
+
+## Frontend Rules (`frontend-admin/`)
+1. **Mandatory Shared UI Components (`@/components/layout`):**
+   - Always use `PageShell`, `PageHeader`, `PageStatGrid`, `PageStatCard`, `PageCard`, `PageToolbar`, `PageSearchInput`, `PageSegmentedFilter`, `RefreshButton`, `ResponsiveDataTable`, `PagePagination`, `PageErrorBanner`, `FormField`, and `ConfirmDeleteDialog` from `frontend-admin/src/components/layout/page.tsx`.
+   - Always provide a `mobileCard` renderer to `ResponsiveDataTable` for mobile responsiveness.
+2. **Theme Studio Compatibility:**
+   - Never hardcode colors (`bg-white`, `bg-slate-900`, etc.). Use semantic classes (`bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`) so all 8 Primary palettes and 8 Surface palettes work automatically.
+3. **i18n & Navigation:**
+   - Add translations to both `frontend-admin/src/locales/vi.json` and `frontend-admin/src/locales/en.json`.
+   - Register routes in `frontend-admin/src/App.tsx` (lazy-loaded with `<ProtectedRoute permission="...">`) and navigation links in `AppSidebar.tsx` and `CommandMenu.tsx`.
+
+## Git Exclusions
+Never commit `tmp/`, `pb_data/`, `.codegraph/`, `node_modules/`, or `.docker/.env`.
