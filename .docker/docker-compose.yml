@@ -1,6 +1,7 @@
 services:
   pocketbase:
     container_name: pocketbase-custom
+    image: "${PB_IMAGE:-ghcr.io/cuongpham2107/pocketbase-custom:latest}"
     build:
       context: ..
       dockerfile: .docker/Dockerfile
