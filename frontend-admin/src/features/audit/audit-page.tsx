@@ -1,5 +1,5 @@
-import * as React from "react"
-import { useTranslation } from "react-i18next"
+import * as React from "react";
+import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
   Copy,
@@ -7,11 +7,11 @@ import {
   Eye,
   ScrollText,
   XCircle,
-} from "lucide-react"
-import { toast } from "sonner"
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   PageCard,
   PageErrorBanner,
@@ -24,25 +24,25 @@ import {
   RefreshButton,
   ResponsiveDataTable,
   type ResponsiveColumn,
-} from "@/components/layout/page"
+} from "@/components/layout/page";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
-import { api, ApiError } from "@/lib/api"
-import { usePermissions } from "@/lib/permissions"
-import { cn } from "@/lib/utils"
-import type { AuditFilterOptions, AuditLog } from "@/types"
+} from "@/components/ui/sheet";
+import { api, ApiError } from "@/lib/api";
+import { usePermissions } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
+import type { AuditFilterOptions, AuditLog } from "@/types";
 
 const CSV_COLUMNS: Array<keyof AuditLog> = [
   "id",
@@ -56,11 +56,11 @@ const CSV_COLUMNS: Array<keyof AuditLog> = [
   "request_id",
   "trace_id",
   "detail",
-]
+];
 
 function formatTime(iso: string, locale: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString(locale, {
     year: "numeric",
     month: "2-digit",
@@ -68,19 +68,21 @@ function formatTime(iso: string, locale: string): string {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-  })
+  });
 }
 
 function csvCell(value: unknown): string {
-  if (value === null || value === undefined) return ""
-  const text = String(value)
-  return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 function toCSV(rows: AuditLog[]): string {
-  const header = CSV_COLUMNS.join(",")
-  const body = rows.map((row) => CSV_COLUMNS.map((col) => csvCell(row[col])).join(","))
-  return [header, ...body].join("\n")
+  const header = CSV_COLUMNS.join(",");
+  const body = rows.map((row) =>
+    CSV_COLUMNS.map((col) => csvCell(row[col])).join(","),
+  );
+  return [header, ...body].join("\n");
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -90,14 +92,14 @@ function StatusBadge({ status }: { status: string }) {
         <CheckCircle2 className="mr-1 size-3" />
         Thành công
       </Badge>
-    )
+    );
   }
   return (
     <Badge variant="destructive" className="text-[10px] font-semibold">
       <XCircle className="mr-1 size-3" />
       Thất bại
     </Badge>
-  )
+  );
 }
 
 function DetailRow({
@@ -105,19 +107,19 @@ function DetailRow({
   value,
   mono = true,
 }: {
-  label: string
-  value?: string | null
-  mono?: boolean
+  label: string;
+  value?: string | null;
+  mono?: boolean;
 }) {
   const onCopy = async () => {
-    if (!value) return
+    if (!value) return;
     try {
-      await navigator.clipboard.writeText(value)
-      toast.success(label, { description: value })
+      await navigator.clipboard.writeText(value);
+      toast.success(label, { description: value });
     } catch {
       /* clipboard bị chặn — bỏ qua */
     }
-  }
+  };
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
@@ -139,50 +141,52 @@ function DetailRow({
         {value || "—"}
       </p>
     </div>
-  )
+  );
 }
 
 export function AuditPage() {
-  const { t, i18n } = useTranslation()
-  const { can } = usePermissions()
-  const [logs, setLogs] = React.useState<AuditLog[]>([])
-  const [total, setTotal] = React.useState(0)
-  const [totalPages, setTotalPages] = React.useState(1)
-  const [page, setPage] = React.useState(1)
-  const [perPage, setPerPage] = React.useState(20)
-  const [status, setStatus] = React.useState<"all" | "success" | "failure">("all")
-  const [search, setSearch] = React.useState("")
-  const [action, setAction] = React.useState("")
-  const [resource, setResource] = React.useState("")
+  const { t, i18n } = useTranslation();
+  const { can } = usePermissions();
+  const [logs, setLogs] = React.useState<AuditLog[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(1);
+  const [page, setPage] = React.useState(1);
+  const [perPage, setPerPage] = React.useState(20);
+  const [status, setStatus] = React.useState<"all" | "success" | "failure">(
+    "all",
+  );
+  const [search, setSearch] = React.useState("");
+  const [action, setAction] = React.useState("");
+  const [resource, setResource] = React.useState("");
   const [filters, setFilters] = React.useState({
     q: "",
     status: "all",
     action: "",
     resource: "",
-  })
-  const [reloadTick, setReloadTick] = React.useState(0)
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
-  const [detail, setDetail] = React.useState<AuditLog | null>(null)
+  });
+  const [reloadTick, setReloadTick] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [detail, setDetail] = React.useState<AuditLog | null>(null);
   const [options, setOptions] = React.useState<AuditFilterOptions>({
     actions: [],
     resources: [],
-  })
+  });
 
   React.useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     api
       .getAuditFilters()
       .then((next) => {
-        if (!cancelled) setOptions(next)
+        if (!cancelled) setOptions(next);
       })
       .catch(() => {
         /* lọc vẫn dùng được với "tất cả" */
-      })
+      });
     return () => {
-      cancelled = true
-    }
-  }, [])
+      cancelled = true;
+    };
+  }, []);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -191,21 +195,21 @@ export function AuditPage() {
         status,
         action: action.trim(),
         resource: resource.trim(),
-      })
-      setPage(1)
-    }, 350)
-    return () => window.clearTimeout(timer)
-  }, [search, status, action, resource])
+      });
+      setPage(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [search, status, action, resource]);
 
   React.useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-    const paramsFilter: Record<string, string> = {}
-    if (filters.status !== "all") paramsFilter.status = filters.status
-    if (filters.action) paramsFilter.action = filters.action
-    if (filters.resource) paramsFilter.resource = filters.resource
+    const paramsFilter: Record<string, string> = {};
+    if (filters.status !== "all") paramsFilter.status = filters.status;
+    if (filters.action) paramsFilter.action = filters.action;
+    if (filters.resource) paramsFilter.resource = filters.resource;
 
     api
       .listAuditLogs({
@@ -216,39 +220,43 @@ export function AuditPage() {
       })
       .then((res) => {
         if (!cancelled) {
-          setLogs(res.data)
-          setTotal(res.pagination.total_items)
-          setTotalPages(Math.max(1, res.pagination.total_pages))
+          setLogs(res.data);
+          setTotal(res.pagination.total_items);
+          setTotalPages(Math.max(1, res.pagination.total_pages));
         }
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : t("common.unknownError"))
+          setError(
+            err instanceof ApiError ? err.message : t("common.unknownError"),
+          );
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
-      cancelled = true
-    }
-  }, [page, perPage, filters, reloadTick, t])
+      cancelled = true;
+    };
+  }, [page, perPage, filters, reloadTick, t]);
 
   const exportCSV = () => {
     if (logs.length === 0) {
-      toast.info(t("audit.exportEmpty"))
-      return
+      toast.info(t("audit.exportEmpty"));
+      return;
     }
-    const blob = new Blob([`\uFEFF${toCSV(logs)}`], { type: "text/csv;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`
-    link.click()
-    URL.revokeObjectURL(url)
-    toast.success(t("audit.exported", { count: logs.length }))
-  }
+    const blob = new Blob([`\uFEFF${toCSV(logs)}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("audit.exported", { count: logs.length }));
+  };
 
   const columns: ResponsiveColumn<AuditLog>[] = [
     {
@@ -263,14 +271,15 @@ export function AuditPage() {
       key: "time",
       header: t("audit.time"),
       headerClassName: "w-40",
-      cellClassName: "text-xs text-muted-foreground font-mono whitespace-nowrap",
+      cellClassName:
+        "text-xs text-muted-foreground font-mono whitespace-nowrap",
       render: (log) => formatTime(log.created_at, i18n.language),
     },
     {
       key: "actor",
       header: t("audit.actor"),
       render: (log) => {
-        const initial = (log.actor_email || "A").charAt(0).toUpperCase()
+        const initial = (log.actor_email || "A").charAt(0).toUpperCase();
         return (
           <div className="flex items-center gap-2.5">
             <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
@@ -287,7 +296,7 @@ export function AuditPage() {
               )}
             </div>
           </div>
-        )
+        );
       },
     },
     {
@@ -311,7 +320,10 @@ export function AuditPage() {
           <span className="font-mono text-xs text-foreground/90">
             {log.resource}
             {log.resource_id ? (
-              <span className="font-normal text-muted-foreground"> #{log.resource_id}</span>
+              <span className="font-normal text-muted-foreground">
+                {" "}
+                #{log.resource_id}
+              </span>
             ) : (
               ""
             )}
@@ -345,7 +357,7 @@ export function AuditPage() {
         </Button>
       ),
     },
-  ]
+  ];
 
   return (
     <PageShell>
@@ -354,7 +366,10 @@ export function AuditPage() {
         title={t("audit.title")}
         description={t("audit.pageDescription", { total })}
         badge={
-          <Badge variant="outline" className="px-2 py-0.5 font-mono text-[11px]">
+          <Badge
+            variant="outline"
+            className="px-2 py-0.5 font-mono text-[11px]"
+          >
             {total} bản ghi
           </Badge>
         }
@@ -401,7 +416,10 @@ export function AuditPage() {
               ]}
             />
 
-            <Select value={action || "all"} onValueChange={(v) => setAction(v === "all" ? "" : v)}>
+            <Select
+              value={action || "all"}
+              onValueChange={(v) => setAction(v === "all" ? "" : v)}
+            >
               <SelectTrigger
                 size="sm"
                 title={action || t("audit.allAction")}
@@ -412,7 +430,11 @@ export function AuditPage() {
               <SelectContent>
                 <SelectItem value="all">{t("audit.allAction")}</SelectItem>
                 {options.actions.map((value) => (
-                  <SelectItem key={value} value={value} className="font-mono text-xs">
+                  <SelectItem
+                    key={value}
+                    value={value}
+                    className="font-mono text-xs"
+                  >
                     {value}
                   </SelectItem>
                 ))}
@@ -433,7 +455,11 @@ export function AuditPage() {
               <SelectContent>
                 <SelectItem value="all">{t("audit.allResource")}</SelectItem>
                 {options.resources.map((value) => (
-                  <SelectItem key={value} value={value} className="font-mono text-xs">
+                  <SelectItem
+                    key={value}
+                    value={value}
+                    className="font-mono text-xs"
+                  >
                     {value}
                   </SelectItem>
                 ))}
@@ -495,17 +521,27 @@ export function AuditPage() {
         />
       </PageCard>
 
-      <Sheet open={detail !== null} onOpenChange={(open) => !open && setDetail(null)}>
+      <Sheet
+        open={detail !== null}
+        onOpenChange={(open) => !open && setDetail(null)}
+      >
         <SheetContent className="w-full overflow-y-auto sm:max-w-md">
           <SheetHeader className="border-b border-border/60 pb-3">
-            <SheetTitle className="text-sm font-bold">{t("audit.detail")}</SheetTitle>
+            <SheetTitle className="text-sm font-bold">
+              {t("audit.detail")}
+            </SheetTitle>
             <SheetDescription className="font-mono text-[11px]">
-              #{detail?.id} · {detail ? formatTime(detail.created_at, i18n.language) : ""}
+              #{detail?.id} ·{" "}
+              {detail ? formatTime(detail.created_at, i18n.language) : ""}
             </SheetDescription>
           </SheetHeader>
           {detail && (
             <div className="space-y-4 px-4 py-4 text-xs">
-              <DetailRow label={t("audit.actor")} value={detail.actor_email} mono={false} />
+              <DetailRow
+                label={t("audit.actor")}
+                value={detail.actor_email}
+                mono={false}
+              />
               <DetailRow label={t("audit.action")} value={detail.action} />
               <DetailRow
                 label={t("audit.resource")}
@@ -515,16 +551,28 @@ export function AuditPage() {
                     : null
                 }
               />
-              <DetailRow label={t("audit.status")} value={detail.status} mono={false} />
+              <DetailRow
+                label={t("audit.status")}
+                value={detail.status}
+                mono={false}
+              />
               <DetailRow label={t("audit.ip")} value={detail.ip} />
               <DetailRow label="request_id" value={detail.request_id} />
               <DetailRow label="trace_id" value={detail.trace_id} />
-              <DetailRow label="user_agent" value={detail.user_agent} mono={false} />
-              <DetailRow label={t("audit.detail")} value={detail.detail} mono={false} />
+              <DetailRow
+                label="user_agent"
+                value={detail.user_agent}
+                mono={false}
+              />
+              <DetailRow
+                label={t("audit.detail")}
+                value={detail.detail}
+                mono={false}
+              />
             </div>
           )}
         </SheetContent>
       </Sheet>
     </PageShell>
-  )
+  );
 }
