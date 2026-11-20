@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev run serve build build-frontend build-backend install clean sync docker-build docker-up docker-down docker-logs
+.PHONY: help dev run serve build build-frontend build-backend lint lint-backend lint-frontend test test-backend test-frontend ci install clean sync docker-build docker-up docker-down docker-logs
 
 # Colors for terminal output
 CYAN   := \033[36m
@@ -24,9 +24,12 @@ help:
 	@echo "  $(YELLOW)make dev$(RESET)            Khởi động cả Backend (hot-reload) & Frontend (Vite HMR) song song"
 	@echo "  $(YELLOW)make run$(RESET) (hoặc serve) Build frontend rồi chạy PocketBase nguyên khối tại cổng 8090"
 	@echo "  $(YELLOW)make build$(RESET)          Build toàn bộ project (React Frontend + Go Backend binary)"
+	@echo "  $(YELLOW)make lint$(RESET)           Kiểm tra mã nguồn (go vet + oxlint + tsc)"
+	@echo "  $(YELLOW)make test$(RESET)           Chạy toàn bộ Unit / Integration test (Go + Vitest)"
+	@echo "  $(YELLOW)make ci$(RESET)             Chạy trọn bộ quy trình CI dưới local (lint + test + build)"
 	@echo "  $(YELLOW)make install$(RESET)        Cài đặt đầy đủ dependencies (Go modules + npm packages)"
 	@echo "  $(YELLOW)make clean$(RESET)          Dọn dẹp thư mục tạm tmp/"
-	@echo "  $(YELLOW)make sync$(RESET)           Đồng bộ CodeGraph knowledge graph"
+	@echo "  $(YELLOW)make sync$(RESET)           Đồng bộ code-review-graph knowledge graph"
 	@echo ""
 	@echo "$(GREEN)Các lệnh Docker (.docker/):$(RESET)"
 	@echo "  $(YELLOW)make docker-build$(RESET)   Build Docker image (multi-stage: React + Go)"
@@ -64,6 +67,38 @@ build-backend:
 build: build-frontend build-backend
 	@echo "$(GREEN)✅ Build toàn bộ project thành công!$(RESET)"
 
+## lint-backend: Kiểm tra tĩnh mã nguồn Go
+lint-backend:
+	@echo "$(YELLOW)🔍 Đang kiểm tra Go Backend (go vet)...$(RESET)"
+	@go vet ./...
+
+## lint-frontend: Kiểm tra mã nguồn React Frontend (Oxlint)
+lint-frontend:
+	@echo "$(YELLOW)🔍 Đang kiểm tra React Frontend (oxlint)...$(RESET)"
+	@cd frontend-admin && npm run lint
+
+## lint: Kiểm tra mã nguồn cả Backend và Frontend
+lint: lint-backend lint-frontend
+	@echo "$(GREEN)✅ Lint hoàn tất!$(RESET)"
+
+## test-backend: Chạy Unit & Integration test cho Go Backend
+test-backend:
+	@echo "$(YELLOW)🧪 Đang chạy Go tests...$(RESET)"
+	@go test -v -race ./...
+
+## test-frontend: Chạy Unit test cho React Frontend (Vitest)
+test-frontend:
+	@echo "$(YELLOW)🧪 Đang chạy Frontend Vitest...$(RESET)"
+	@cd frontend-admin && npm run test
+
+## test: Chạy toàn bộ test (Backend + Frontend)
+test: test-backend test-frontend
+	@echo "$(GREEN)✅ Toàn bộ test đã vượt qua!$(RESET)"
+
+## ci: Chạy toàn bộ quy trình kiểm tra CI dưới local (lint + test + build)
+ci: lint test build
+	@echo "$(GREEN)🎉 CI check hoàn tất (Lint + Test + Build)!$(RESET)"
+
 ## dev: Chạy song song Go backend (Air hot reload) và Frontend (Vite HMR)
 dev:
 	@echo "$(GREEN)🚀 Đang khởi động môi trường phát triển (Full-stack Dev)...$(RESET)"
@@ -88,9 +123,9 @@ clean:
 	@rm -rf tmp/*
 	@echo "$(GREEN)✅ Đã dọn dẹp thư mục tmp/$(RESET)"
 
-## sync: Đồng bộ CodeGraph
+## sync: Đồng bộ code-review-graph
 sync:
-	@codegraph sync
+	@code-review-graph update
 
 ## docker-build: Build Docker image từ .docker/docker-compose.yml
 docker-build:

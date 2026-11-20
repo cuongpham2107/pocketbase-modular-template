@@ -152,9 +152,11 @@ make dev
 | `make help` | Show all available Makefile targets |
 | `make install` | Install Go modules and `frontend-admin` npm packages |
 | `make dev` | Run Go backend (Air hot-reload) + React frontend (Vite HMR) in parallel |
+| `make lint` | Run static analysis (`go vet ./...` + `oxlint`) |
+| `make test` | Run backend integration tests (`go test -race ./...`) and frontend unit tests (`vitest`) |
+| `make ci` | Run full local CI pipeline (`lint` + `test` + `build`) |
 | `make build` | Build React frontend into `pb_public/admin/` and compile Go binary (`tmp/main`) |
 | `make run` | Build frontend and start PocketBase server on `:8090` |
-| `go test -v ./...` | Run all backend integration & module tests |
 | `go run . rbac:sync` | Manually synchronize module permissions into SQLite |
 | `go run . user:grant-admin <email>` | Grant the `admin` RBAC role to an existing user |
 

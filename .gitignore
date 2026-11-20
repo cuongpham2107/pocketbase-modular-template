@@ -1,6 +1,8 @@
 tmp/
 pb_data/
+.code-review-graph/
 .codegraph/
+.github/context-mode/
 frontend-admin/node_modules/
 frontend-admin/dist/
 pocketbase-custom

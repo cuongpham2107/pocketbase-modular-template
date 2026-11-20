@@ -29,4 +29,5 @@ Always read and follow `AGENTS.md` and `.agents/rules/` before writing or modify
    - Register routes in `frontend-admin/src/App.tsx` (lazy-loaded with `<ProtectedRoute permission="...">`) and navigation links in `AppSidebar.tsx` and `CommandMenu.tsx`.
 
 ## Git Exclusions
-Never commit `tmp/`, `pb_data/`, `.codegraph/`, `node_modules/`, or `.docker/.env`.
+Never commit `tmp/`, `pb_data/`, `.code-review-graph/`, `node_modules/`, or `.docker/.env`.
+

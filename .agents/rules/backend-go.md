@@ -25,3 +25,4 @@ These rules apply whenever creating or modifying Go code in `internal/`, `migrat
 - Define all collections, fields, indexes, and collection rules inside `migrations/`. Never create collections dynamically at runtime in application code.
 - Keep PocketBase collection write rules (`CreateRule`, `UpdateRule`, `DeleteRule`) as `nil` (superuser-only) so all business writes go through `/api/v1/*` with RBAC enforcement.
 - Wrap all multi-step database writes (e.g., stock deduction + order creation + audit/notification) inside `app.RunInTransaction(func(txApp core.App) error { ... })`.
+

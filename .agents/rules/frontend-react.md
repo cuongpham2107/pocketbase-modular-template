@@ -25,3 +25,4 @@ Never build raw HTML tables or ad-hoc page wrappers from scratch. Always compose
 - Never hardcode user-facing strings in JSX. Add every new translation key to both `frontend-admin/src/locales/vi.json` and `frontend-admin/src/locales/en.json` and access via `useTranslation()`.
 - Lazy-load feature pages in `frontend-admin/src/App.tsx` using `React.lazy(...)` and wrap routes with `<ProtectedRoute permission="<module>.view">`.
 - Register navigation items in both `frontend-admin/src/components/layout/AppSidebar.tsx` and `frontend-admin/src/components/layout/CommandMenu.tsx` with the appropriate `permission` guard.
+

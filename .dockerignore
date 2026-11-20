@@ -3,7 +3,7 @@
 .gitignore
 .vscode
 .idea
-.codegraph
+.code-review-graph
 
 # Local runtime & build artifacts
 pb_data/

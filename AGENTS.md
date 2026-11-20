@@ -51,7 +51,8 @@ Dự án sử dụng mô hình **BaaS + Dedicated Business Portal** thay vì can
 ```text
 pocket-base/
 ├── main.go                     # Entrypoint: pocketbase.New + migratecmd + app.Register
-├── Makefile                    # Điều khiển toàn bộ dự án (dev, build, run, docker-*)
+├── Makefile                    # Điều khiển toàn bộ dự án (dev, build, lint, test, ci, docker-*)
+├── .github/workflows/          # GitHub Actions CI/CD (ci.yml, release-deploy.yml)
 ├── .docker/                    # Multi-stage Dockerfile, docker-compose.yml, entrypoint.sh
 ├── migrations/                 # Go migrations: schema + API rules (Studio tự sinh khi chạy --dev)
 ├── internal/
@@ -92,8 +93,10 @@ make dev
 make build
 make run
 
-# 3. Chạy Unit / Integration Tests cho toàn bộ Backend
-go test -v ./...
+# 3. Kiểm tra chất lượng mã nguồn (Lint, Unit/Integration Tests, Full CI check)
+make lint                                    # go vet + oxlint
+make test                                    # go test -race ./... + vitest run
+make ci                                      # Chạy trọn bộ lint + test + build giống GitHub Actions
 
 # 4. Lệnh CLI quản trị tiện ích
 go run . rbac:sync                           # Đồng bộ quyền từ code Go vào SQLite
@@ -104,9 +107,10 @@ make docker-up                               # Build & chạy container ngầm t
 make docker-logs                             # Xem log container
 make docker-down                             # Tắt container
 
-# 6. Code Intelligence (CodeGraph)
-make sync                                    # Đồng bộ CodeGraph index sau khi sửa code
-codegraph explore "<symbol or query>"        # Tra cứu luồng gọi hàm trước khi grep/đọc file
+# 6. Code Intelligence (code-review-graph)
+make sync                                    # Cập nhật incremental index cho code-review-graph
+code-review-graph detect-changes             # Phân tích blast-radius & rủi ro các file đang đổi
+code-review-graph status                     # Xem thống kê graph của project
 ```
 
 ---
@@ -250,4 +254,25 @@ import {
 5. **Cô lập giữa các Module:** Các module trong `internal/modules/*` không import lẫn nhau, ngoại lệ duy nhất là import `rbac` (và gọi `notifications.Send` khi cần bắn thông báo realtime).
 6. **Không hardcode màu sắc ở Frontend:** Luôn sử dụng các class ngữ nghĩa của Tailwind/shadcn (`bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`) và `ResponsiveDataTable` để giao diện tự động đổi màu theo **Primary Palette** và **Surface Palette** trong Theme Studio.
 7. **Viết Test cho Service:** Mỗi module mới nên có file `service_test.go` sử dụng `tests.NewTestApp(t.TempDir())` và `_ "cuongpham2107/pocketbase-custom/migrations"` (tham khảo `internal/modules/orders/service_test.go`).
-8. **Không bao giờ commit file rác lên Git:** Tuyệt đối không commit `tmp/`, `pb_data/`, `.codegraph/`, `node_modules/`, `.docker/.env`.
+8. **Không bao giờ commit file rác lên Git:** Tuyệt đối không commit `tmp/`, `pb_data/`, `.code-review-graph/`, `node_modules/`, `.docker/.env`.
+
+---
+
+<!-- code-review-graph MCP tools -->
+## 6. Hướng dẫn sử dụng `code-review-graph` (MCP Tools)
+
+Dự án sử dụng **code-review-graph** (`.code-review-graph/`) làm knowledge graph cục bộ. AI Agent **luôn ưu tiên gọi các MCP tool của `code-review-graph` trước** khi grep/đọc hàng loạt file để tiết kiệm token và nắm đúng phụ thuộc:
+
+### Khi nào gọi tool nào
+- **Code Review / kiểm tra diff trước khi commit:** gọi `detect_changes_tool` + `get_review_context_tool` để phân tích rủi ro, test gap và ngữ cảnh thay đổi thay vì đọc toàn bộ file.
+- **Đánh giá phạm vi ảnh hưởng (Blast Radius):** gọi `get_impact_radius_tool` hoặc `get_affected_flows_tool` trước khi sửa interface, service hay schema dùng chung.
+- **Truy vết quan hệ / test coverage:** gọi `query_graph_tool` (với `callers_of`, `callees_of`, `imports_of`, `tests_for`).
+- **Tìm kiếm & đọc nhanh symbol:** gọi `semantic_search_nodes_tool(include_source=True, expand_neighbors=True)` để lấy code nguồn kèm các hàm lân cận.
+- **Khảo sát kiến trúc & luồng chạy:** gọi `get_architecture_overview_tool`, `list_communities_tool`, `list_flows_tool`.
+- **Refactor / tìm dead code:** gọi `refactor_tool`.
+
+### Nguyên tắc bắt buộc khi dùng Graph
+1. **Luôn đối chiếu mã nguồn thật:** Không sửa code chỉ dựa vào output tóm tắt của graph — với mọi thay đổi quan trọng, hãy đọc trực tiếp hàm liên quan và test tương ứng trước khi sửa. Nếu graph lệch với file nguồn, **file nguồn luôn là chuẩn**.
+2. **Giữ graph mới sau khi sửa code:** Sau khi tạo/sửa nhiều file, chủ động gọi `build_or_update_graph_tool` (hoặc chạy `make sync` / `code-review-graph update`) để graph không bị cũ.
+3. **Kết quả rỗng không có nghĩa là không tồn tại:** Có thể file chưa được index hoặc gọi động (reflection/runtime), khi đó hãy fallback sang `grep` / đọc file trực tiếp.
+<!-- /code-review-graph MCP tools -->
