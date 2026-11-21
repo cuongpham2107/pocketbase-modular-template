@@ -122,6 +122,7 @@ Khi được yêu cầu xây dựng một module nghiệp vụ mới (ví dụ: 
 ### Bước 1: Tạo Schema Migration (`migrations/`)
 Tạo file mới trong `migrations/` (ví dụ `migrations/1776000010_products_schema.go`).
 - **Quy tắc vàng:** Các rule ghi (`CreateRule`, `UpdateRule`, `DeleteRule`) để mặc định là `nil` (chỉ superuser) vì mọi thao tác nghiệp vụ đều đi qua `/api/v1/<module>` có kiểm tra `rbac.Require(...)`.
+- **Rule đọc cũng để `nil`:** Không dùng `ListRule/ViewRule = "@request.auth.id != ''"`, nếu không user đã đăng nhập (dù thiếu quyền `xxx.view`) vẫn đọc được toàn bộ dữ liệu qua `/api/collections/<name>/records`, bỏ qua RBAC. Xem `migrations/1762650004_lock_api_rules.go` và test `TestNativeCollectionAPIIsLocked`.
 
 ```go
 package migrations
