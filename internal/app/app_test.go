@@ -155,3 +155,38 @@ func TestPermissionEnforcement(t *testing.T) {
 		s.Test(t)
 	}
 }
+
+// The native /api/collections API must not bypass the RBAC checks on /api/v1.
+func TestNativeCollectionAPIIsLocked(t *testing.T) {
+	f := setup(t)
+	factory := func(testing.TB) *tests.TestApp { return f.app }
+	auth := map[string]string{"Authorization": f.userToken}
+
+	scenarios := []tests.ApiScenario{
+		{
+			Name:               "native users list only returns the caller",
+			Method:             http.MethodGet,
+			URL:                "/api/collections/users/records",
+			Headers:            auth,
+			ExpectedStatus:     200,
+			ExpectedContent:    []string{`"totalItems":1`, f.userID},
+			NotExpectedContent: []string{"rbac-admin@example.com"},
+		},
+	}
+	for _, col := range []string{"orders", "roles", "permissions", "media_folders", "media_files"} {
+		scenarios = append(scenarios, tests.ApiScenario{
+			Name:            "native " + col + " list is superuser-only",
+			Method:          http.MethodGet,
+			URL:             "/api/collections/" + col + "/records",
+			Headers:         auth,
+			ExpectedStatus:  403,
+			ExpectedContent: []string{`"status":403`},
+		})
+	}
+
+	for _, s := range scenarios {
+		s.TestAppFactory = factory
+		s.DisableTestAppCleanup = true
+		s.Test(t)
+	}
+}
