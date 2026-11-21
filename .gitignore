@@ -11,3 +11,5 @@ pocketbase-custom
 .docker/.env
 
 
+pb_public/admin/
+frontend-admin/*.tsbuildinfo
