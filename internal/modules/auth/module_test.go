@@ -25,9 +25,9 @@ func newApp(t testing.TB) *tests.TestApp {
 	if err != nil {
 		t.Fatal(err)
 	}
-	features := []module.Module{Module, {Name: "orders", Permissions: []module.Permission{
-		{Code: "orders:view", Basic: true},
-		{Code: "orders:confirm"},
+	features := []module.Module{Module, {Name: "reports", Permissions: []module.Permission{
+		{Code: "reports:view", Basic: true},
+		{Code: "reports:export"},
 	}}}
 	_, catalog := rbac.NewModule(features)
 	if err := rbac.Sync(app, catalog); err != nil {
@@ -108,8 +108,8 @@ func TestAuthRoutes(t *testing.T) {
 			URL:                "/api/v1/auth/login",
 			Body:               json(`{"email":"  ` + testEmail + ` ","password":"` + testPassword + `"}`),
 			ExpectedStatus:     200,
-			ExpectedContent:    []string{`"success":true`, `"token":"`, `"orders:view"`, `"role":"user"`},
-			NotExpectedContent: []string{`"orders:confirm"`, `"password"`, `"tokenKey"`},
+			ExpectedContent:    []string{`"success":true`, `"token":"`, `"reports:view"`, `"role":"user"`},
+			NotExpectedContent: []string{`"reports:export"`, `"password"`, `"tokenKey"`},
 		},
 		{
 			Name:               "register assigns the default user role and ignores injected roles",
@@ -148,7 +148,7 @@ func TestAuthRoutes(t *testing.T) {
 			Method:          http.MethodGet,
 			URL:             "/api/v1/auth/me",
 			ExpectedStatus:  200,
-			ExpectedContent: []string{`"email":"` + testEmail + `"`, `"orders:view"`},
+			ExpectedContent: []string{`"email":"` + testEmail + `"`, `"reports:view"`},
 		},
 		{
 			Name:            "theme settings are saved on the caller",

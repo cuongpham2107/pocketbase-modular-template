@@ -6,6 +6,8 @@ import (
 
 	"ganigeorgiev.com/pocketbase/dbx"
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
+
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 )
 
 // Filter is the audit list query.
@@ -35,12 +37,9 @@ type service struct {
 	app core.App
 }
 
-// Noisy endpoints hidden from the audit trail.
-var hiddenPaths = []string{"/notifications/stream", "/health", "/notifications/unread-count"}
-
 func (s service) List(f Filter) ([]Item, int64, error) {
 	exprs := []dbx.Expression{dbx.NewExp("json_extract(data, '$.type') = 'request'")}
-	for _, p := range hiddenPaths {
+	for _, p := range config.Get().Audit.HiddenPaths {
 		exprs = append(exprs, dbx.Not(dbx.Like("message", p)))
 	}
 	if q := strings.TrimSpace(f.Query); q != "" {

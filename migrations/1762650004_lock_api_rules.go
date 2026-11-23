@@ -10,13 +10,13 @@ import (
 //
 // Every business read goes through /api/v1/<module>, guarded by rbac.Require.
 // Leaving ListRule/ViewRule as "any signed-in user" let a user without, say,
-// orders:view read every order (or every user's email) straight from the
+// media:view read every file record (or every user's email) straight from the
 // native records API. Users may still read their own record; everything else
 // is superuser-only on the native API. Non-protected file fields keep being
 // served by /api/files, so media URLs keep working.
 
 // lockedCollections are readable only through the module APIs.
-var lockedCollections = []string{"permissions", "roles", "orders", "media_folders", "media_files"}
+var lockedCollections = []string{"permissions", "roles", "media_folders", "media_files"}
 
 // selfOnly lets a user read only their own record.
 var selfOnly = types.Pointer("id = @request.auth.id")

@@ -7,6 +7,7 @@ import (
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
 
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 	"cuongpham2107/pocketbase-custom/internal/platform/httpx"
 )
 
@@ -15,7 +16,7 @@ type handler struct {
 }
 
 func (h handler) list(e *core.RequestEvent) error {
-	p := httpx.ParsePage(e, 10)
+	p := httpx.ParsePage(e, config.Get().Pagination.UsersLimit)
 	q := e.Request.URL.Query()
 	recs, total, err := h.svc.List(ListFilter{
 		Search: strings.TrimSpace(q.Get("search")),

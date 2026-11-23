@@ -100,8 +100,7 @@ A production-ready **BaaS + Dedicated Business Admin Portal** architecture that 
 │       ├── users/              # User management & role assignment
 │       ├── media/              # PocketBase file storage + nested folders
 │       ├── notifications/      # User/broadcast notifications + WebSocket hub + cron cleanup
-│       ├── audit/              # System audit log reader
-│       └── orders/             # Reference business module (copy this to create new features)
+│       └── audit/              # System audit log reader
 └── frontend-admin/             # React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui
     ├── src/
     │   ├── components/layout/  # AppSidebar, PageShell, ResponsiveDataTable, CommandMenu
@@ -185,7 +184,7 @@ To customize environment variables (`PB_SUPERUSER_EMAIL`, `PB_SUPERUSER_PASSWORD
 
 > 📖 **For AI Coding Assistants & Developers:** See **[AGENTS.md](./AGENTS.md)** for the complete **5-Step Full-Stack Playbook** (including copy-pasteable Go migration/module templates and React shared UI components like `ResponsiveDataTable`, `PageShell`, `PageSearchInput`, and `ThemeStudio` integration).
 
-1. **Duplicate the reference module:** Copy `internal/modules/orders` to `internal/modules/<your_module>`.
+1. **Create a module folder:** Follow the structure of `internal/modules/users` or `internal/modules/media` (`module.go`, `handler.go`, `service.go`, `service_test.go`) under `internal/modules/<your_module>`.
 2. **Define permissions & routes:** Declare your `module.Module` struct with `Permissions`, `Init` (hooks/cron), and `Routes` protected by `rbac.Require(...)`.
 3. **Register the module:** Add `<your_module>.Module` to the `features` slice in `internal/app/app.go`.
 4. **Create a migration:** Run in `--dev` mode or add a migration in `migrations/` for your new collection. On next startup, all declared permissions will automatically sync to the database and appear in the Admin Portal's Permission Matrix.

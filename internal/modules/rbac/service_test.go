@@ -12,9 +12,9 @@ import (
 )
 
 var testFeatures = []module.Module{
-	{Name: "orders", Label: "Orders", Permissions: []module.Permission{
-		{Code: "orders:view", Label: "View", Basic: true},
-		{Code: "orders:confirm", Label: "Confirm"},
+	{Name: "reports", Label: "Reports", Permissions: []module.Permission{
+		{Code: "reports:view", Label: "View", Basic: true},
+		{Code: "reports:export", Label: "Export"},
 	}},
 	{Name: "empty"}, // modules without permissions are skipped
 }
@@ -67,7 +67,7 @@ func TestBuildCatalogSkipsModulesWithoutPermissions(t *testing.T) {
 	for _, g := range catalog {
 		mods = append(mods, g.Module)
 	}
-	if !slices.Equal(mods, []string{"orders", "roles"}) {
+	if !slices.Equal(mods, []string{"reports", "roles"}) {
 		t.Fatalf("catalog modules = %v", mods)
 	}
 	if got := len(flatten(catalog)); got != 2+len(permissions) {
@@ -82,7 +82,7 @@ func TestSyncCreatesRolesAndIsIdempotent(t *testing.T) {
 	if len(admin) != len(flatten(catalog)) {
 		t.Fatalf("admin should hold every permission, got %v", admin)
 	}
-	if user := rolePerms(t, app, RoleUser); !slices.Equal(user, []string{"orders:view"}) {
+	if user := rolePerms(t, app, RoleUser); !slices.Equal(user, []string{"reports:view"}) {
 		t.Fatalf("user role should only hold Basic permissions, got %v", user)
 	}
 
@@ -98,7 +98,7 @@ func TestSyncCreatesRolesAndIsIdempotent(t *testing.T) {
 func TestSyncKeepsUserRoleCustomisationsButResetsAdmin(t *testing.T) {
 	app, catalog := newApp(t)
 
-	if err := AssignPermissionsToRole(app, mustRoleID(t, app, RoleUser), []string{"orders:confirm"}); err != nil {
+	if err := AssignPermissionsToRole(app, mustRoleID(t, app, RoleUser), []string{"reports:export"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := AssignPermissionsToRole(app, mustRoleID(t, app, RoleAdmin), []string{}); err != nil {
@@ -108,7 +108,7 @@ func TestSyncKeepsUserRoleCustomisationsButResetsAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if user := rolePerms(t, app, RoleUser); !slices.Equal(user, []string{"orders:confirm"}) {
+	if user := rolePerms(t, app, RoleUser); !slices.Equal(user, []string{"reports:export"}) {
 		t.Fatalf("sync must not overwrite an edited user role, got %v", user)
 	}
 	if admin := rolePerms(t, app, RoleAdmin); len(admin) != len(flatten(catalog)) {
@@ -118,13 +118,13 @@ func TestSyncKeepsUserRoleCustomisationsButResetsAdmin(t *testing.T) {
 
 func TestUserPermissionsUnionAcrossRoles(t *testing.T) {
 	app, _ := newApp(t)
-	if _, err := CreateRole(app, "confirmer", "", []string{"orders:confirm", "orders:view"}); err != nil {
+	if _, err := CreateRole(app, "exporter", "", []string{"reports:export", "reports:view"}); err != nil {
 		t.Fatal(err)
 	}
-	u := newUser(t, app, "multi@example.com", RoleUser, "confirmer")
+	u := newUser(t, app, "multi@example.com", RoleUser, "exporter")
 
 	got := UserPermissions(app, u)
-	if !slices.Equal(got, []string{"orders:confirm", "orders:view"}) {
+	if !slices.Equal(got, []string{"reports:export", "reports:view"}) {
 		t.Fatalf("expected sorted, de-duplicated union, got %v", got)
 	}
 	dto := FormatUser(app, u)
@@ -186,7 +186,7 @@ func TestAddUsersToRoleIsAtomic(t *testing.T) {
 
 func TestCoverageReportsUnassignedAndDeprecated(t *testing.T) {
 	app, catalog := newApp(t)
-	if err := AssignPermissionsToRole(app, mustRoleID(t, app, RoleAdmin), []string{"orders:view"}); err != nil {
+	if err := AssignPermissionsToRole(app, mustRoleID(t, app, RoleAdmin), []string{"reports:view"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -206,7 +206,7 @@ func TestCoverageReportsUnassignedAndDeprecated(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if slices.Contains(cov.UnassignedCodes, "orders:view") || !slices.Contains(cov.UnassignedCodes, "orders:confirm") {
+	if slices.Contains(cov.UnassignedCodes, "reports:view") || !slices.Contains(cov.UnassignedCodes, "reports:export") {
 		t.Fatalf("unassigned = %v", cov.UnassignedCodes)
 	}
 	if !slices.Equal(cov.DeprecatedAssigned, []string{"legacy:thing"}) {

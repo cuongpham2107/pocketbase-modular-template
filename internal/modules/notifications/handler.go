@@ -6,6 +6,7 @@ import (
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
 
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 	"cuongpham2107/pocketbase-custom/internal/platform/httpx"
 )
 
@@ -48,7 +49,7 @@ func (h handler) create(e *core.RequestEvent) error {
 }
 
 func (h handler) list(e *core.RequestEvent) error {
-	p := httpx.ParsePage(e, 20)
+	p := httpx.ParsePage(e, config.Get().Pagination.DefaultLimit)
 	u := e.Request.URL.Query().Get("unread")
 	recs, total, err := h.svc.List(e.Auth.Id, u == "true" || u == "1", p.Limit, p.Offset)
 	if err != nil {

@@ -7,52 +7,51 @@ import (
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
 
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 )
-
-type demoUser struct {
-	email, password, name, role string
-}
-
-// Demo accounts used by the login form's quick-fill buttons.
-var demoUsers = []demoUser{
-	{"admin@example.com", "admin123", "System Administrator", rbac.RoleAdmin},
-	{"user@example.com", "user123", "Demo User", rbac.RoleUser},
-}
 
 // Seed creates demo accounts and a welcome notification if they don't exist yet.
 // Existing records are never modified.
 func Seed(app core.App) error {
-	for _, u := range demoUsers {
+	devCfg := config.Get().Dev
+	for _, u := range devCfg.DemoUsers {
 		if err := ensureUser(app, u); err != nil {
-			return fmt.Errorf("seed %s: %w", u.email, err)
+			return fmt.Errorf("seed %s: %w", u.Email, err)
 		}
 	}
-	return ensureWelcomeNotification(app)
+	return ensureWelcomeNotification(app, devCfg.WelcomeNotification)
 }
 
-func ensureUser(app core.App, u demoUser) error {
-	if _, err := app.FindAuthRecordByEmail("users", u.email); err == nil {
+func ensureUser(app core.App, u config.DemoUser) error {
+	if _, err := app.FindAuthRecordByEmail("users", u.Email); err == nil {
 		return nil
 	}
 	col, err := app.FindCollectionByNameOrId("users")
 	if err != nil {
 		return err
 	}
-	role, err := app.FindFirstRecordByData("roles", "name", u.role)
+	roleName := u.Role
+	if roleName == "" {
+		roleName = rbac.RoleUser
+	}
+	role, err := app.FindFirstRecordByData("roles", "name", roleName)
 	if err != nil {
 		return err
 	}
 	rec := core.NewRecord(col)
-	rec.Set("email", u.email)
-	rec.Set("name", u.name)
+	rec.Set("email", u.Email)
+	rec.Set("name", u.Name)
 	rec.Set("verified", true)
 	rec.Set("roles", []string{role.Id})
-	rec.SetPassword(u.password)
+	rec.SetPassword(u.Password)
 	// Demo passwords are shorter than the users collection minimum; dev only.
 	return app.SaveNoValidate(rec)
 }
 
-func ensureWelcomeNotification(app core.App) error {
+func ensureWelcomeNotification(app core.App, welcome config.WelcomeNotification) error {
+	if welcome.Title == "" {
+		return nil
+	}
 	total, err := app.CountRecords("notifications")
 	if err != nil || total > 0 {
 		return err
@@ -61,9 +60,13 @@ func ensureWelcomeNotification(app core.App) error {
 	if err != nil {
 		return err
 	}
+	typ := welcome.Type
+	if typ == "" {
+		typ = "system"
+	}
 	n := core.NewRecord(col)
-	n.Set("type", "system")
-	n.Set("title", "Chào mừng bạn đến với Business Admin Portal")
-	n.Set("body", "Hệ thống quản trị và phân quyền RBAC đã được khởi tạo thành công trên PocketBase.")
+	n.Set("type", typ)
+	n.Set("title", welcome.Title)
+	n.Set("body", welcome.Body)
 	return app.Save(n)
 }

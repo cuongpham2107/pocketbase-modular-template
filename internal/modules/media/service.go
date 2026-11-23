@@ -10,6 +10,8 @@ import (
 	"ganigeorgiev.com/pocketbase/dbx"
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
 	"ganigeorgiev.com/pocketbase/pocketbase/tools/filesystem"
+
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 )
 
 var (
@@ -251,7 +253,7 @@ func (s service) CreateFolder(userID, name, parentID, color string) (*FolderDTO,
 		return nil, ErrNameRequired
 	}
 	if color = strings.TrimSpace(color); color == "" {
-		color = "#3b82f6"
+		color = config.Get().Media.DefaultFolderColor
 	}
 	col, err := s.app.FindCollectionByNameOrId("media_folders")
 	if err != nil {

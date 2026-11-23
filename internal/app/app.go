@@ -14,9 +14,9 @@ import (
 	"cuongpham2107/pocketbase-custom/internal/modules/auth"
 	"cuongpham2107/pocketbase-custom/internal/modules/media"
 	"cuongpham2107/pocketbase-custom/internal/modules/notifications"
-	"cuongpham2107/pocketbase-custom/internal/modules/orders"
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
 	"cuongpham2107/pocketbase-custom/internal/modules/users"
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 	"cuongpham2107/pocketbase-custom/internal/platform/httpx"
 	"cuongpham2107/pocketbase-custom/internal/platform/module"
 )
@@ -28,13 +28,7 @@ var features = []module.Module{
 	notifications.Module,
 	audit.Module,
 	media.Module,
-	orders.Module,
 }
-
-// frontendModules is what GET /api/v1/modules advertises to the admin portal.
-var frontendModules = []string{"rbac", "users", "theme", "audit", "notifications", "media"}
-
-const adminDir = "./pb_public/admin"
 
 // Register binds all modules to the app. Migrations must already be registered (blank import in main).
 func Register(app core.App) {
@@ -88,6 +82,7 @@ func systemRoutes(se *core.ServeEvent) {
 		return e.NoContent(204)
 	})
 	se.Router.GET("/api/v1/modules", func(e *core.RequestEvent) error {
+		frontendModules := config.Get().App.FrontendModules
 		return e.JSON(200, map[string]any{
 			"success": true,
 			"data":    map[string]any{"modules": frontendModules},
@@ -98,6 +93,7 @@ func systemRoutes(se *core.ServeEvent) {
 
 // adminSPA serves the built admin portal at /admin/ with index.html fallback for client routes.
 func adminSPA(se *core.ServeEvent) {
+	adminDir := config.Get().App.AdminDir
 	se.Router.GET("/", func(e *core.RequestEvent) error {
 		return e.Redirect(307, "/admin/")
 	})

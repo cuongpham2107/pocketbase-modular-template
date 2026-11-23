@@ -67,8 +67,7 @@ pocket-base/
 │       ├── users/              # Quản trị người dùng
 │       ├── notifications/      # Thông báo theo user + broadcast + WebSocket hub (/ws) + Cron job
 │       ├── audit/              # Audit trail đọc từ request logs của PocketBase
-│       ├── media/              # Lưu trữ file qua PocketBase Storage + quản lý cây thư mục đệ quy
-│       └── orders/             # MODULE MẪU — copy thư mục này khi tạo tính năng mới
+│       └── media/              # Lưu trữ file qua PocketBase Storage + quản lý cây thư mục đệ quy
 └── frontend-admin/
     └── src/
         ├── components/layout/
@@ -155,7 +154,7 @@ func init() {
 ```
 
 ### Bước 2: Tạo Backend Module (`internal/modules/<name>/`)
-Copy từ thư mục mẫu `internal/modules/orders/` sang `internal/modules/<name>/`, gồm 3 file rõ trách nhiệm:
+Tham khảo cấu trúc chuẩn từ `internal/modules/users/` hoặc `internal/modules/media/` để tạo `internal/modules/<name>/`, gồm 3 file rõ trách nhiệm:
 
 1. **`module.go`** — Khai báo quyền (`Permissions`), hooks/cron (`Init`) và đường dẫn HTTP (`Routes`):
    ```go
@@ -205,7 +204,6 @@ var features = []module.Module{
     notifications.Module,
     audit.Module,
     media.Module,
-    orders.Module,
     products.Module, // <-- Thêm tại đây
 }
 ```
@@ -254,7 +252,7 @@ import {
 4. **Mọi route phải có quyền:** Group bind `apis.RequireAuth()`, từng route bind `rbac.Require(PermXxx)`.
 5. **Cô lập giữa các Module:** Các module trong `internal/modules/*` không import lẫn nhau, ngoại lệ duy nhất là import `rbac` (và gọi `notifications.Send` khi cần bắn thông báo realtime).
 6. **Không hardcode màu sắc ở Frontend:** Luôn sử dụng các class ngữ nghĩa của Tailwind/shadcn (`bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`) và `ResponsiveDataTable` để giao diện tự động đổi màu theo **Primary Palette** và **Surface Palette** trong Theme Studio.
-7. **Viết Test cho Service:** Mỗi module mới nên có file `service_test.go` sử dụng `tests.NewTestApp(t.TempDir())` và `_ "cuongpham2107/pocketbase-custom/migrations"` (tham khảo `internal/modules/orders/service_test.go`).
+7. **Viết Test cho Service:** Mỗi module mới nên có file `service_test.go` sử dụng `tests.NewTestApp(t.TempDir())` và `_ "cuongpham2107/pocketbase-custom/migrations"` (tham khảo `internal/modules/media/service_test.go`).
 8. **Không bao giờ commit file rác lên Git:** Tuyệt đối không commit `tmp/`, `pb_data/`, `.code-review-graph/`, `node_modules/`, `.docker/.env`.
 
 ---

@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"ganigeorgiev.com/pocketbase/pocketbase/core"
-)
 
-const maxPageSize = 100
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
+)
 
 // OK writes {"success": true, "data": data}.
 func OK(e *core.RequestEvent, status int, data any) error {
@@ -40,8 +40,12 @@ type Page struct {
 	Offset int
 }
 
-// ParsePage reads ?page and ?per_page (or ?limit), capped at maxPageSize.
+// ParsePage reads ?page and ?per_page (or ?limit), capped at configured max_page_size.
 func ParsePage(e *core.RequestEvent, defaultLimit int) Page {
+	cfg := config.Get().Pagination
+	if defaultLimit < 1 {
+		defaultLimit = cfg.DefaultLimit
+	}
 	q := e.Request.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page < 1 {
@@ -54,7 +58,7 @@ func ParsePage(e *core.RequestEvent, defaultLimit int) Page {
 	if limit < 1 {
 		limit = defaultLimit
 	}
-	limit = min(limit, maxPageSize)
+	limit = min(limit, cfg.MaxPageSize)
 	return Page{Page: page, Limit: limit, Offset: (page - 1) * limit}
 }
 

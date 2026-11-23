@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
+	"cuongpham2107/pocketbase-custom/internal/platform/config"
 	"cuongpham2107/pocketbase-custom/internal/platform/httpx"
 	"cuongpham2107/pocketbase-custom/internal/platform/module"
 )
@@ -40,10 +41,12 @@ func initHooksAndJobs(app core.App) {
 		return e.Next()
 	})
 
-	// Scheduled Cron Job: Clean up read notifications older than 30 days at 03:00 every day.
-	app.Cron().MustAdd("notifications_cleanup_read", "0 3 * * *", func() {
+	// Scheduled Cron Job: Clean up old read notifications according to configured cron & retention.
+	notifCfg := config.Get().Notifications
+	app.Cron().MustAdd("notifications_cleanup_read", notifCfg.CleanupCron, func() {
 		svc := service{app: app}
-		cutoff := time.Now().Add(-30 * 24 * time.Hour)
+		retention := time.Duration(notifCfg.CleanupRetentionDays) * 24 * time.Hour
+		cutoff := time.Now().Add(-retention)
 		if deleted, err := svc.CleanOldRead(cutoff); err != nil {
 			app.Logger().Warn("notifications cleanup failed", "error", err)
 		} else if deleted > 0 {
