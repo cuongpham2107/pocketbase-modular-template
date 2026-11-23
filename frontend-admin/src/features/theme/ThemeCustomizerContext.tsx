@@ -1,4 +1,5 @@
 import * as React from "react"
+import { MotionConfig } from "motion/react"
 import { api } from "@/lib/api"
 import type { User } from "@/types"
 
@@ -413,24 +414,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [settings])
 
   return (
-    <ThemeContext.Provider
-      value={{
-        settings,
-        updateSetting,
-        applyPreset,
-        resetToDefault,
-        isOpen,
-        setIsOpen,
-        toggleOpen,
-        exportJson,
-        exportCss,
-        isAuthenticated: activeUserId !== null,
-        hasUserOverride,
-        syncStatus,
-        saveToAccount,
-      }}
+    <MotionConfig
+      reducedMotion={settings.reducedMotion ? "always" : "user"}
+      transition={settings.reducedMotion ? { duration: 0 } : undefined}
     >
-      {children}
-    </ThemeContext.Provider>
+      <ThemeContext.Provider
+        value={{
+          settings,
+          updateSetting,
+          applyPreset,
+          resetToDefault,
+          isOpen,
+          setIsOpen,
+          toggleOpen,
+          exportJson,
+          exportCss,
+          isAuthenticated: activeUserId !== null,
+          hasUserOverride,
+          syncStatus,
+          saveToAccount,
+        }}
+      >
+        {children}
+      </ThemeContext.Provider>
+    </MotionConfig>
   )
 }

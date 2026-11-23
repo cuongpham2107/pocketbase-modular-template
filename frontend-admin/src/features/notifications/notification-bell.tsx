@@ -188,22 +188,21 @@ export function NotificationBell({ enabled, onNewNotification }: NotificationBel
 
       <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
         <SheetHeader className="border-b border-border/60 pb-3">
-          <SheetTitle className="flex items-center justify-between gap-2 text-sm font-bold">
-            <span className="flex items-center gap-2">
-              {t("notifications.title")}
-              {store.unread > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
-                  {t("notifications.unread", { count: store.unread })}
-                </span>
-              )}
-            </span>
+          <SheetTitle className="flex items-center gap-2 pr-8 text-sm font-bold">
+            <span>{t("notifications.title")}</span>
+            {store.unread > 0 && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
+                {t("notifications.unread", { count: store.unread })}
+              </span>
+            )}
+          </SheetTitle>
+          <SheetDescription className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
             <span className="flex items-center gap-1.5 text-[10px] font-normal text-muted-foreground">
               <StatusDot status={status} />
-              {status === "open" ? t("notifications.connected") : t("notifications.reconnecting")}
+              <span>
+                {status === "open" ? t("notifications.connected") : t("notifications.reconnecting")}
+              </span>
             </span>
-          </SheetTitle>
-          <SheetDescription className="flex items-center justify-between gap-2 text-[11px]">
-            <span>{store.error ?? ""}</span>
             <Button
               variant="outline"
               size="sm"
@@ -215,6 +214,9 @@ export function NotificationBell({ enabled, onNewNotification }: NotificationBel
               {t("notifications.markAllRead")}
             </Button>
           </SheetDescription>
+          {store.error && (
+            <p className="text-[11px] font-medium text-destructive">{store.error}</p>
+          )}
         </SheetHeader>
 
         <div className="min-h-[320px] flex-1 overflow-y-auto px-4">

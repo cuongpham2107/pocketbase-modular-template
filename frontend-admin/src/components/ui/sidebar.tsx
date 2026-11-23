@@ -53,6 +53,10 @@ function useSidebar() {
   return context
 }
 
+function useOptionalSidebar() {
+  return React.useContext(SidebarContext)
+}
+
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -156,6 +160,7 @@ function Sidebar({
   variant = "sidebar",
   collapsible = "offcanvas",
   className,
+  style,
   children,
   ...props
 }: React.ComponentProps<"div"> & {
@@ -164,21 +169,6 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-
-  if (collapsible === "none") {
-    return (
-      <div
-        data-slot="sidebar"
-        className={cn(
-          "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    )
-  }
 
   if (isMobile) {
     return (
@@ -205,6 +195,40 @@ function Sidebar({
     )
   }
 
+  if (collapsible === "none") {
+    return (
+      <div
+        data-slot="sidebar"
+        data-variant={variant}
+        data-side={side}
+        style={
+          {
+            width: "var(--sidebar-width)",
+            ...style,
+          } as React.CSSProperties
+        }
+        className={cn(
+          "sticky top-0 hidden h-svh w-(--sidebar-width) shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex",
+          variant === "floating" || variant === "inset" ? "p-2" : "",
+          className
+        )}
+        {...props}
+      >
+        <div
+          data-sidebar="sidebar"
+          data-slot="sidebar-inner"
+          className={cn(
+            "flex h-full w-full flex-col bg-sidebar",
+            variant === "floating" &&
+              "rounded-lg border border-sidebar-border shadow-sm"
+          )}
+        >
+          {children}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className="group peer hidden text-sidebar-foreground md:block"
@@ -213,7 +237,7 @@ function Sidebar({
       data-variant={variant}
       data-side={side}
       data-slot="sidebar"
-      style={props.style}
+      style={style}
     >
       {/* This is what handles the sidebar gap on desktop */}
       <div
@@ -232,10 +256,6 @@ function Sidebar({
       />
       <div
         data-slot="sidebar-container"
-        style={{
-          width: state === "collapsed" ? undefined : "var(--sidebar-width)",
-          ...props.style,
-        }}
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
@@ -248,6 +268,10 @@ function Sidebar({
           className
         )}
         {...props}
+        style={{
+          width: state === "collapsed" ? undefined : "var(--sidebar-width)",
+          ...style,
+        }}
       >
         <div
           data-sidebar="sidebar"
@@ -729,5 +753,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  useOptionalSidebar,
   useSidebar,
 }

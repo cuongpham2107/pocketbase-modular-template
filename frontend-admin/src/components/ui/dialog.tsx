@@ -4,8 +4,10 @@ import * as React from "react"
 import { cn } from "cn"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "@animate-ui/react/primitives/radix-ui"
+import { Dialog as RadixDialog } from "radix-ui"
 
 import { Button } from "@/components/ui/button"
+import { useReducedMotionPreference } from "@/features/theme/theme-context"
 
 function Dialog({
   ...props
@@ -22,6 +24,10 @@ function DialogTrigger({
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  const reducedMotion = useReducedMotionPreference()
+  if (reducedMotion) {
+    return <RadixDialog.Portal data-slot="dialog-portal" {...props} />
+  }
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
@@ -35,13 +41,21 @@ function DialogOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  const reducedMotion = useReducedMotionPreference()
+  const overlayClass = cn("fixed inset-0 z-50 bg-black/50", className)
+  if (reducedMotion) {
+    return (
+      <RadixDialog.Overlay
+        data-slot="dialog-overlay"
+        className={overlayClass}
+        {...(props as React.ComponentProps<typeof RadixDialog.Overlay>)}
+      />
+    )
+  }
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 z-50 bg-black/50",
-        className
-      )}
+      className={overlayClass}
       {...props}
     />
   )
@@ -55,28 +69,43 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const reducedMotion = useReducedMotionPreference()
+  const contentClass = cn(
+    "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg outline-none sm:max-w-lg",
+    className
+  )
+  const closeBtn = showCloseButton && (
+    <DialogPrimitive.Close
+      data-slot="dialog-close"
+      className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+    >
+      <XIcon />
+      <span className="sr-only">Close</span>
+    </DialogPrimitive.Close>
+  )
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
-      <DialogPrimitive.Content
-        data-slot="dialog-content"
-        className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg outline-none sm:max-w-lg",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Content>
+      {reducedMotion ? (
+        <RadixDialog.Content
+          data-slot="dialog-content"
+          className={contentClass}
+          {...(props as React.ComponentProps<typeof RadixDialog.Content>)}
+        >
+          {children}
+          {closeBtn}
+        </RadixDialog.Content>
+      ) : (
+        <DialogPrimitive.Content
+          data-slot="dialog-content"
+          className={contentClass}
+          {...props}
+        >
+          {children}
+          {closeBtn}
+        </DialogPrimitive.Content>
+      )}
     </DialogPortal>
   )
 }

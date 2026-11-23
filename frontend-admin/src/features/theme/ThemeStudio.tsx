@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useOptionalSidebar } from "@/components/ui/sidebar"
 import { useThemeCustomizer } from "./theme-context"
 import {
   PALETTES,
@@ -54,6 +55,7 @@ export function ThemeStudio() {
 
   const [copied, setCopied] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState<"all" | "style" | "layout" | "table">("all")
+  const sidebar = useOptionalSidebar()
 
   const handleCopyCss = () => {
     navigator.clipboard.writeText(exportCss())
@@ -94,10 +96,10 @@ export function ThemeStudio() {
 
             {/* Anchored Dropdown Card */}
             <motion.div
-              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              initial={settings.reducedMotion ? false : { opacity: 0, y: -6, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.97 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
+              exit={settings.reducedMotion ? undefined : { opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: settings.reducedMotion ? 0 : 0.16, ease: "easeOut" }}
               className="absolute right-0 top-10 z-50 w-[360px] sm:w-[430px] max-w-[calc(100vw-1.5rem)] max-h-[85vh] overflow-y-auto rounded-2xl border border-border/80 bg-card/98 backdrop-blur-xl shadow-2xl p-4 sm:p-5 text-foreground space-y-4 sm:space-y-5"
             >
               {/* Header */}
@@ -538,11 +540,22 @@ export function ThemeStudio() {
 
                   {/* Sidebar Collapsible Mode */}
                   <section className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-foreground">Chế độ thu gọn Sidebar</span>
-                      <span className="text-[11px] font-medium text-muted-foreground capitalize">
-                        {settings.sidebarCollapsible || "icon"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {sidebar && (settings.sidebarCollapsible || "icon") !== "none" && (
+                          <button
+                            type="button"
+                            onClick={sidebar.toggleSidebar}
+                            className="rounded-md border border-border/70 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-muted cursor-pointer"
+                          >
+                            {sidebar.state === "collapsed" ? "Mở rộng" : "Thu gọn thử"}
+                          </button>
+                        )}
+                        <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                          {settings.sidebarCollapsible || "icon"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/40 p-1">
@@ -558,7 +571,12 @@ export function ThemeStudio() {
                           <button
                             key={c.id}
                             type="button"
-                            onClick={() => updateSetting("sidebarCollapsible", c.id)}
+                            onClick={() => {
+                              updateSetting("sidebarCollapsible", c.id)
+                              if (c.id === "none") {
+                                sidebar?.setOpen(true)
+                              }
+                            }}
                             className={`rounded-lg py-1.5 text-center text-[10px] font-medium transition-all cursor-pointer ${
                               isActive
                                 ? "bg-card text-foreground shadow-xs font-bold"
@@ -570,6 +588,9 @@ export function ThemeStudio() {
                         )
                       })}
                     </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Áp dụng khi thu gọn bằng nút góc trái trên hoặc phím Ctrl/⌘+B.
+                    </p>
                   </section>
 
                   {/* Sidebar Width */}

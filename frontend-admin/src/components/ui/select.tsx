@@ -2,6 +2,9 @@ import * as React from "react"
 import { cn } from "cn"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { Select as SelectPrimitive } from "@animate-ui/react/primitives/radix-ui"
+import { Select as RadixSelect } from "radix-ui"
+
+import { useReducedMotionPreference } from "@/features/theme/theme-context"
 
 function Select({
   ...props
@@ -54,28 +57,50 @@ function SelectContent({
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const reducedMotion = useReducedMotionPreference()
+  const contentClass = cn(
+    "relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md",
+    position === "popper" &&
+      "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+    className
+  )
+  const viewportClass = cn(
+    "p-1",
+    position === "popper" &&
+      "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+  )
+
+  if (reducedMotion) {
+    return (
+      <RadixSelect.Portal>
+        <RadixSelect.Content
+          data-slot="select-content"
+          className={contentClass}
+          position={position}
+          align={align}
+          {...(props as React.ComponentProps<typeof RadixSelect.Content>)}
+        >
+          <SelectScrollUpButton />
+          <RadixSelect.Viewport className={viewportClass}>
+            {children}
+          </RadixSelect.Viewport>
+          <SelectScrollDownButton />
+        </RadixSelect.Content>
+      </RadixSelect.Portal>
+    )
+  }
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
-        className={cn(
-          "relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md",
-          position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-          className
-        )}
+        className={contentClass}
         position={position}
         align={align}
         {...props}
       >
         <SelectScrollUpButton />
-        <SelectPrimitive.Viewport
-          className={cn(
-            "p-1",
-            position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
-          )}
-        >
+        <SelectPrimitive.Viewport className={viewportClass}>
           {children}
         </SelectPrimitive.Viewport>
         <SelectScrollDownButton />

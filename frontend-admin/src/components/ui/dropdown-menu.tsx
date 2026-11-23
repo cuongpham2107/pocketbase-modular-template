@@ -2,6 +2,9 @@ import * as React from "react"
 import { cn } from "cn"
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { DropdownMenu as DropdownMenuPrimitive } from "@animate-ui/react/primitives/radix-ui"
+import { DropdownMenu as RadixDropdownMenu } from "radix-ui"
+
+import { useReducedMotionPreference } from "@/features/theme/theme-context"
 
 function DropdownMenu({
   ...props
@@ -33,15 +36,29 @@ function DropdownMenuContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const reducedMotion = useReducedMotionPreference()
+  const contentClass = cn(
+    "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+    className
+  )
+  if (reducedMotion) {
+    return (
+      <RadixDropdownMenu.Portal>
+        <RadixDropdownMenu.Content
+          data-slot="dropdown-menu-content"
+          sideOffset={sideOffset}
+          className={contentClass}
+          {...(props as React.ComponentProps<typeof RadixDropdownMenu.Content>)}
+        />
+      </RadixDropdownMenu.Portal>
+    )
+  }
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
-        className={cn(
-          "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
-          className
-        )}
+        className={contentClass}
         {...props}
       />
     </DropdownMenuPrimitive.Portal>
@@ -223,13 +240,24 @@ function DropdownMenuSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+  const reducedMotion = useReducedMotionPreference()
+  const subClass = cn(
+    "z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
+    className
+  )
+  if (reducedMotion) {
+    return (
+      <RadixDropdownMenu.SubContent
+        data-slot="dropdown-menu-sub-content"
+        className={subClass}
+        {...(props as React.ComponentProps<typeof RadixDropdownMenu.SubContent>)}
+      />
+    )
+  }
   return (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
-      className={cn(
-        "z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
-        className
-      )}
+      className={subClass}
       {...props}
     />
   )

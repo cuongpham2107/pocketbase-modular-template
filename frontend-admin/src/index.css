@@ -210,11 +210,26 @@ html[data-card-style="glass"] [data-slot="card"] {
 }
 
 /* Reduced Motion */
+html[data-reduced-motion="true"],
 html[data-reduced-motion="true"] *,
 html[data-reduced-motion="true"] *::before,
 html[data-reduced-motion="true"] *::after {
-  animation-duration: 0.01ms !important;
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
   animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-reduced-motion="true"] [data-slot="dialog-content"],
+html[data-reduced-motion="true"] [data-slot="sheet-content"],
+html[data-reduced-motion="true"] [data-slot="tabs-content"],
+html[data-reduced-motion="true"] [data-slot="collapsible-content"],
+html[data-reduced-motion="true"] [data-slot="tooltip-content"],
+html[data-reduced-motion="true"] [data-slot="select-content"],
+html[data-reduced-motion="true"] [data-slot="dropdown-menu-content"],
+html[data-reduced-motion="true"] [data-slot="context-menu-content"] {
+  filter: none !important;
 }
 

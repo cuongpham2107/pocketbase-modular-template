@@ -2,6 +2,9 @@ import * as React from "react"
 import { cn } from "cn"
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { ContextMenu as ContextMenuPrimitive } from "@animate-ui/react/primitives/radix-ui"
+import { ContextMenu as RadixContextMenu } from "radix-ui"
+
+import { useReducedMotionPreference } from "@/features/theme/theme-context"
 
 function ContextMenu({
   ...props
@@ -78,13 +81,24 @@ function ContextMenuSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.SubContent>) {
+  const reducedMotion = useReducedMotionPreference()
+  const subClass = cn(
+    "z-50 min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
+    className
+  )
+  if (reducedMotion) {
+    return (
+      <RadixContextMenu.SubContent
+        data-slot="context-menu-sub-content"
+        className={subClass}
+        {...(props as React.ComponentProps<typeof RadixContextMenu.SubContent>)}
+      />
+    )
+  }
   return (
     <ContextMenuPrimitive.SubContent
       data-slot="context-menu-sub-content"
-      className={cn(
-        "z-50 min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
-        className
-      )}
+      className={subClass}
       {...props}
     />
   )
@@ -94,14 +108,27 @@ function ContextMenuContent({
   className,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Content>) {
+  const reducedMotion = useReducedMotionPreference()
+  const contentClass = cn(
+    "z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+    className
+  )
+  if (reducedMotion) {
+    return (
+      <RadixContextMenu.Portal>
+        <RadixContextMenu.Content
+          data-slot="context-menu-content"
+          className={contentClass}
+          {...(props as React.ComponentProps<typeof RadixContextMenu.Content>)}
+        />
+      </RadixContextMenu.Portal>
+    )
+  }
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
         data-slot="context-menu-content"
-        className={cn(
-          "z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
-          className
-        )}
+        className={contentClass}
         {...props}
       />
     </ContextMenuPrimitive.Portal>

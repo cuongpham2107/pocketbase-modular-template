@@ -124,9 +124,11 @@ export function AppSidebar({
       variant={variant}
       className={variant === "sidebar" ? "border-r border-border/60 bg-sidebar" : "bg-sidebar"}
       style={
-        {
-          "--sidebar-width": sidebarWidth,
-        } as React.CSSProperties
+        sidebarWidth
+          ? ({
+              "--sidebar-width": sidebarWidth,
+            } as React.CSSProperties)
+          : undefined
       }
       {...props}
     >

@@ -29,3 +29,8 @@ export function useThemeCustomizer() {
   }
   return context
 }
+
+export function useReducedMotionPreference(): boolean {
+  const context = React.useContext(ThemeContext)
+  return Boolean(context?.settings.reducedMotion)
+}
