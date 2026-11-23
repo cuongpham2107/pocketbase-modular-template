@@ -160,7 +160,7 @@ export function NotificationsPage() {
 
   const renderItemActions = (item: Notification) => (
     <div
-      className="flex items-center justify-end gap-1"
+      className="flex items-center justify-center gap-1"
       onClick={(e) => e.stopPropagation()}
     >
       {!item.read_at && (
@@ -260,8 +260,9 @@ export function NotificationsPage() {
     {
       key: "actions",
       header: "Thao tác",
-      headerClassName: "text-right text-muted-foreground pr-4",
-      cellClassName: "text-right pr-4",
+      align: "center",
+      fit: true,
+      headerClassName: "text-muted-foreground",
       render: (item) => renderItemActions(item),
     },
   ]

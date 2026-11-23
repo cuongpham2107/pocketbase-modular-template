@@ -349,8 +349,9 @@ export function AuditPage() {
     {
       key: "detail",
       header: "Chi tiết",
-      headerClassName: "text-right text-muted-foreground pr-4",
-      cellClassName: "text-right pr-4",
+      align: "center",
+      fit: true,
+      headerClassName: "text-muted-foreground",
       render: () => (
         <Button size="icon" variant="ghost" className="size-7 rounded-lg">
           <Eye className="size-3.5 text-muted-foreground" />

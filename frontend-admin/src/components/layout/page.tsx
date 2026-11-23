@@ -305,6 +305,9 @@ export interface ResponsiveColumn<T> {
   header: React.ReactNode
   headerClassName?: string
   cellClassName?: string
+  align?: "left" | "center" | "right"
+  /** Thu gọn chiều rộng cột vừa với tiêu đề/nội dung (mặc định bật cho cột `actions`). */
+  fit?: boolean
   /** Ẩn cột phụ trên màn hình nhỏ (< lg) khi vẫn ở chế độ bảng. */
   hideOnMobile?: boolean
   render: (item: T) => React.ReactNode
@@ -388,18 +391,26 @@ export function ResponsiveDataTable<T>({
         <Table>
           <TableHeader className="bg-muted/40">
             <TableRow className="border-border/60 hover:bg-transparent">
-              {columns.map((col) => (
-                <TableHead
-                  key={col.key}
-                  className={cn(
-                    "text-xs font-bold text-foreground",
-                    col.hideOnMobile && "hidden lg:table-cell",
-                    col.headerClassName,
-                  )}
-                >
-                  {col.header}
-                </TableHead>
-              ))}
+              {columns.map((col) => {
+                const isAction = col.key === "actions"
+                const fit = col.fit ?? isAction
+                const align = col.align ?? (isAction ? "center" : undefined)
+                return (
+                  <TableHead
+                    key={col.key}
+                    className={cn(
+                      "text-xs font-bold text-foreground",
+                      align === "center" && "text-center",
+                      align === "right" && "text-right",
+                      fit && "w-[1%] min-w-20 max-w-32 whitespace-nowrap",
+                      col.hideOnMobile && "hidden lg:table-cell",
+                      col.headerClassName,
+                    )}
+                  >
+                    {col.header}
+                  </TableHead>
+                )
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -415,17 +426,25 @@ export function ResponsiveDataTable<T>({
                     rowClassName?.(item),
                   )}
                 >
-                  {columns.map((col) => (
-                    <TableCell
-                      key={col.key}
-                      className={cn(
-                        col.hideOnMobile && "hidden lg:table-cell",
-                        col.cellClassName,
-                      )}
-                    >
-                      {col.render(item)}
-                    </TableCell>
-                  ))}
+                  {columns.map((col) => {
+                    const isAction = col.key === "actions"
+                    const fit = col.fit ?? isAction
+                    const align = col.align ?? (isAction ? "center" : undefined)
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={cn(
+                          align === "center" && "text-center",
+                          align === "right" && "text-right",
+                          fit && "w-[1%] min-w-20 max-w-32 whitespace-nowrap",
+                          col.hideOnMobile && "hidden lg:table-cell",
+                          col.cellClassName,
+                        )}
+                      >
+                        {col.render(item)}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               )
             })}

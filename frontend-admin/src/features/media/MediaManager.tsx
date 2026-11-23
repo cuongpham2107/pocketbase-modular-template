@@ -1106,7 +1106,7 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
                           <th className="p-3 hidden md:table-cell">Định Dạng</th>
                           <th className="p-3">Dung Lượng</th>
                           <th className="p-3 hidden sm:table-cell">Ngày Tải Lên</th>
-                          <th className="p-3 text-right">Thao Tác</th>
+                          <th className="p-3 w-[1%] min-w-24 max-w-36 whitespace-nowrap text-center">Thao Tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/40">
@@ -1134,8 +1134,8 @@ export function MediaManager({ currentUser: _currentUser }: MediaManagerProps) {
                                   <td className="p-3 text-muted-foreground text-[11px] hidden sm:table-cell">
                                     {new Date(file.created_at).toLocaleString("vi-VN")}
                                   </td>
-                                  <td className="p-3 text-right">
-                                    <div className="flex items-center justify-end gap-1">
+                                  <td className="p-3 w-[1%] min-w-24 max-w-36 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center gap-1">
                                       {displayUrl && (
                                         <button
                                           type="button"

@@ -331,8 +331,9 @@ export function UserManager() {
     {
       key: "actions",
       header: t("users.actions"),
-      headerClassName: "text-right text-muted-foreground pr-4",
-      cellClassName: "text-right pr-4",
+      align: "center",
+      fit: true,
+      headerClassName: "text-muted-foreground",
       render: (user) => renderRowActions(user),
     },
   ]
