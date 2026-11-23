@@ -11,6 +11,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
+**English** · [Tiếng Việt](./README.vi.md)
+
 A production-ready **BaaS + Dedicated Business Admin Portal** architecture that keeps PocketBase's native Developer Studio (`/_/`) 100% untouched for zero-conflict upstream upgrades, while providing a feature-rich, modular Go backend (`/api/v1/*`) and a customizable React Business Admin Portal (`/admin/`).
 
 </div>
