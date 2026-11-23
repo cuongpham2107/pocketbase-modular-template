@@ -23,7 +23,7 @@ Dự án sử dụng mô hình **BaaS + Dedicated Business Portal** thay vì can
 │  - Go Extension (internal/):                                                │
 │      ├── modules/  : Mỗi tính năng 1 thư mục (routes, service, hooks, jobs) │
 │      │               mount tại /api/v1/<module>, bảo vệ bằng rbac.Require  │
-│      ├── platform/ : Hạ tầng dùng chung (module contract, httpx envelope)   │
+│      ├── platform/ : Hạ tầng dùng chung (module contract, httpx envelope, config) │
 │      └── app/      : Wiring — danh sách module, RBAC sync, CLI, dev seed    │
 │  - migrations/: Toàn bộ schema + API rules của collection                  │
 └──────────────────────────────────────┬──────────────────────────────────────┘
@@ -59,6 +59,7 @@ pocket-base/
 │   ├── app/app.go              # Danh sách module, RBAC sync, CLI (rbac:sync, user:grant-admin), /ready, /admin SPA
 │   ├── dev/seed.go             # Tài khoản demo (admin@example.com / user@example.com), chỉ chạy khi --dev
 │   ├── platform/
+│   │   ├── config/             # Cấu hình tập trung thuần Go (config.Get(): defaults, TTL, pagination, seeds)
 │   │   ├── module/             # Contract Module{Name, Label, Permissions, Init, Routes}
 │   │   └── httpx/              # Envelope chuẩn: OK, Fail, Paged, ParsePage
 │   └── modules/
@@ -67,15 +68,15 @@ pocket-base/
 │       ├── users/              # Quản trị người dùng
 │       ├── notifications/      # Thông báo theo user + broadcast + WebSocket hub (/ws) + Cron job
 │       ├── audit/              # Audit trail đọc từ request logs của PocketBase
-│       └── media/              # Lưu trữ file qua PocketBase Storage + quản lý cây thư mục đệ quy
+│       ├── media/              # Lưu trữ file qua PocketBase Storage + quản lý cây thư mục đệ quy
+│       └── settings/           # Singleton cài đặt hệ thống (branding, logo/favicon, system theme mặc định)
 └── frontend-admin/
     └── src/
         ├── components/layout/
         │   ├── page.tsx        # BỘ COMPONENT DÙNG CHUNG (PageShell, ResponsiveDataTable, PageSearchInput...)
-        │   ├── AppSidebar.tsx  # Sidebar điều hướng (tự ẩn mục menu theo quyền RBAC & module)
-        │   └── CommandMenu.tsx # Command Palette (⌘K / Ctrl+K)
-        ├── features/           # Mỗi tính năng 1 thư mục (auth, rbac, users, theme, dashboard, audit, notifications, media)
-        ├── locales/            # Đa ngôn ngữ: vi.json, en.json
+        │   └── app-sidebar.tsx # Sidebar điều hướng (branding động, tự ẩn mục theo RBAC & module)
+        ├── features/           # auth, rbac, users, theme, dashboard, audit, notifications, media, settings, gateway
+        ├── locales/            # Đa ngôn ngữ: vi.ts, en.ts
         └── lib/                # api.ts (HTTP client tự refresh token), permissions.ts, modules.ts
 ```
 
@@ -154,9 +155,9 @@ func init() {
 ```
 
 ### Bước 2: Tạo Backend Module (`internal/modules/<name>/`)
-Tham khảo cấu trúc chuẩn từ `internal/modules/users/` hoặc `internal/modules/media/` để tạo `internal/modules/<name>/`, gồm 3 file rõ trách nhiệm:
+Tham khảo cấu trúc chuẩn 3 file từ `internal/modules/users/`, `internal/modules/settings/` hoặc `internal/modules/media/` để tạo `internal/modules/<name>/`:
 
-1. **`module.go`** — Khai báo quyền (`Permissions`), hooks/cron (`Init`) và đường dẫn HTTP (`Routes`):
+1. **`module.go`** — Khai báo quyền (`Permissions`, dùng slug chuẩn `<module>:<action>`), hooks/cron (`Init`) và đường dẫn HTTP (`Routes`):
    ```go
    package products
 
@@ -170,8 +171,8 @@ Tham khảo cấu trúc chuẩn từ `internal/modules/users/` hoặc `internal/
    )
 
    const (
-       PermView   = "products.view"
-       PermManage = "products.manage"
+       PermView   = "products:view"
+       PermManage = "products:manage"
    )
 
    var Module = module.Module{
@@ -191,23 +192,23 @@ Tham khảo cấu trúc chuẩn từ `internal/modules/users/` hoặc `internal/
        },
    }
    ```
-2. **`service.go`** — Chứa 100% logic nghiệp vụ & `app.RunInTransaction(...)`. **Không import `apis` hay `httpx` tại đây** để dễ viết unit test.
+2. **`service.go`** — Chứa 100% logic nghiệp vụ & `app.RunInTransaction(...)`. **Không import `apis` hay `httpx` tại đây** để dễ viết unit test. Các giá trị cấu hình mặc định (limits, TTL, default pagination...) đặt trong `internal/platform/config/config.go` (`config.Get()`).
 3. **`handler.go`** — Chỉ đọc input (`e.BindBody`, `httpx.ParsePage`), gọi `Service`, và trả kết quả qua `httpx.OK(e, data)`, `httpx.Paged(e, items, page, perPage, total)`, hoặc `httpx.Fail(e, status, msg)`.
 
 ### Bước 3: Đăng ký Module vào `internal/app/app.go`
-Thêm 1 dòng duy nhất vào biến `features` trong [internal/app/app.go](file:///Users/cuongpham/go/pocket-base/internal/app/app.go):
+Thêm 1 dòng duy nhất vào biến `features` trong [internal/app/app.go](file:///Users/cuongpham/go/pocket-base/internal/app/app.go) (`rbac.NewModule(features)` sẽ tự tổng hợp catalog quyền từ `features`):
 ```go
 var features = []module.Module{
-    rbac.Module,
     auth.Module,
     users.Module,
     notifications.Module,
     audit.Module,
     media.Module,
+    settings.Module,
     products.Module, // <-- Thêm tại đây
 }
 ```
-> Khi server khởi động, toàn bộ quyền `products.*` sẽ tự động được đồng bộ vào bảng `permissions` và gán sẵn cho role `admin`!
+> Khi server khởi động, toàn bộ quyền `products:*` sẽ tự động được đồng bộ vào bảng `permissions` và gán sẵn cho role `admin`!
 
 ### Bước 4: Tạo Giao diện Quản trị (`frontend-admin/src/features/<name>/`)
 **BẮT BUỘC** tái sử dụng bộ khung giao diện chuẩn trong [page.tsx](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/components/layout/page.tsx) để tự động tương thích với **Theme Studio** (màu Surface, mật độ bảng, sticky header, zebra stripe, bo góc, cỡ chữ) và **Responsive Mobile Card**:
@@ -221,7 +222,7 @@ var features = []module.Module{
 | `PageSearchInput` | Ô tìm kiếm có sẵn icon kính lúp và nút `X` xoá nhanh. |
 | `PageSegmentedFilter` | Bộ lọc dạng tab pill chuyển đổi trạng thái nhanh. |
 | `RefreshButton` | Nút làm mới dữ liệu (tự quay icon `RefreshCw` khi `loading=true`). |
-| `ResponsiveDataTable` | **Bảng dữ liệu thông minh:** hiển thị `<Table>` trên Desktop (hỗ trợ sticky header, mật độ dòng, màu Surface) và tự động chuyển thành danh sách Card (`mobileCard`) trên màn hình điện thoại! |
+| `ResponsiveDataTable` | **Bảng dữ liệu thông minh:** hiển thị `<Table>` trên Desktop (sticky header, mật độ dòng, màu Surface; cột `key: "actions"` hoặc `align: "center", fit: true` tự căn giữa và co gọn) và tự động chuyển thành danh sách Card (`mobileCard`) trên điện thoại! |
 | `PagePagination` | Thanh phân trang chuẩn (First / Prev / Next / Last). |
 | `FormField` | Bọc các ô nhập liệu trong Dialog kèm nhãn, dấu `*` bắt buộc, gợi ý và thông báo lỗi. |
 | `ConfirmDeleteDialog` | Hộp thoại xác nhận xoá chuẩn (có trạng thái `loading`). |
@@ -237,10 +238,10 @@ import {
 ```
 
 ### Bước 5: Gắn Route, Sidebar & Đa ngôn ngữ (i18n)
-1. **Thêm từ khóa ngôn ngữ:** Bổ sung vào cả [vi.json](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/locales/vi.json) và [en.json](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/locales/en.json).
+1. **Thêm từ khóa ngôn ngữ:** Bổ sung vào cả [vi.ts](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/locales/vi.ts) và [en.ts](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/locales/en.ts).
 2. **Khai báo Module (nếu là module bật/tắt):** Thêm tên module vào `ModuleName` trong [modules.ts](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/lib/modules.ts).
-3. **Thêm vào Sidebar & Command Menu:** Khai báo link, icon và quyền `permission: "products.view"` trong [AppSidebar.tsx](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/components/layout/AppSidebar.tsx) và [CommandMenu.tsx](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/components/layout/CommandMenu.tsx).
-4. **Thêm Route lazy-load:** Đăng ký `React.lazy(...)`, `VIEW_TITLES`, và `<Route path="/products" ... />` bọc trong `<ProtectedRoute permission="products.view">` tại [App.tsx](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/App.tsx).
+3. **Thêm vào Sidebar:** Khai báo link, icon và quyền `permission: "products:view"` trong [app-sidebar.tsx](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/components/layout/app-sidebar.tsx).
+4. **Thêm Route lazy-load:** Đăng ký `React.lazy(...)`, `VIEW_TITLES`, và `<Route path="/products" ... />` bọc trong `<ProtectedRoute permission="products:view">` tại [App.tsx](file:///Users/cuongpham/go/pocket-base/frontend-admin/src/App.tsx).
 
 ---
 
@@ -252,8 +253,11 @@ import {
 4. **Mọi route phải có quyền:** Group bind `apis.RequireAuth()`, từng route bind `rbac.Require(PermXxx)`.
 5. **Cô lập giữa các Module:** Các module trong `internal/modules/*` không import lẫn nhau, ngoại lệ duy nhất là import `rbac` (và gọi `notifications.Send` khi cần bắn thông báo realtime).
 6. **Không hardcode màu sắc ở Frontend:** Luôn sử dụng các class ngữ nghĩa của Tailwind/shadcn (`bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`) và `ResponsiveDataTable` để giao diện tự động đổi màu theo **Primary Palette** và **Surface Palette** trong Theme Studio.
-7. **Viết Test cho Service:** Mỗi module mới nên có file `service_test.go` sử dụng `tests.NewTestApp(t.TempDir())` và `_ "cuongpham2107/pocketbase-custom/migrations"` (tham khảo `internal/modules/media/service_test.go`).
-8. **Không bao giờ commit file rác lên Git:** Tuyệt đối không commit `tmp/`, `pb_data/`, `.code-review-graph/`, `node_modules/`, `.docker/.env`.
+7. **Cấu hình tập trung & Theme 2 lớp:**
+   - Cấu hình mặc định của backend đặt tập trung thuần Go tại `internal/platform/config/config.go` (`config.Get()`), không tạo file `app.json` rời.
+   - Theme mặc định toàn hệ thống lưu ở singleton `settings.theme_settings`; tuỳ biến riêng của từng tài khoản lưu tại `users.theme_settings` (Theme Studio chỉ sửa bản ghi của user đang đăng nhập, không ghi đè system settings). Các lựa chọn font chữ trong `theme-config.ts` phải hỗ trợ tiếng Việt (`Inter (Filament)` qua `@fontsource-variable/inter` làm mặc định, cùng `Geist Sans`, `Be Vietnam Pro`, `Plus Jakarta Sans`, `Manrope`, `JetBrains Mono`).
+8. **Viết Test cho Service:** Mỗi module mới nên có file `service_test.go` sử dụng `tests.NewTestApp(t.TempDir())` và `_ "cuongpham2107/pocketbase-custom/migrations"` (tham khảo `internal/modules/media/service_test.go` hoặc `internal/modules/settings/service_test.go`).
+9. **Không bao giờ commit file rác lên Git:** Tuyệt đối không commit `tmp/`, `pb_data/`, `.code-review-graph/`, `node_modules/`, `.docker/.env`.
 
 ---
 

@@ -26,21 +26,21 @@ A production-ready **BaaS + Dedicated Business Admin Portal** architecture that 
 - **🔐 Auto-Synced RBAC (Role-Based Access Control)**
   - Permissions declared in Go modules are automatically synced into SQLite on boot and granted to the `admin` role.
   - Route-level protection via `rbac.Require(perm)` middleware and dynamic permission matrix UI.
-- **🎨 Advanced Theme Studio (Live Customizer)**
-  - **Mode:** Light, Dark, and System sync.
-  - **Color Palettes:** 8 Primary palettes (`Neutral`, `Blue`, `Emerald`, `Violet`, `Rose`, `Amber`, `Cyan`, `Indigo`) & 8 Surface palettes (`Default`, `Slate`, `Stone`, `Linen`, `Sand`, `Sage`, `Rosewood`, `Pure`) that dynamically theme cards, sidebars, and data tables.
-  - **Layout & Density:** Sidebar variants (`sidebar`, `floating`, `inset`), collapsible modes (`icon`, `offcanvas`, `none`), content width, border radius, font family, and font scale (`xs` → `lg`).
-  - **Table & Surface Controls:** Sticky table headers, row density (`compact`, `normal`, `comfortable`), zebra striping, cell borders, card styles (`bordered`, `elevated`, `glass`), and reduced motion.
-  - **Persistence:** Saved per user profile in PocketBase + synced across tabs via `localStorage`.
+- **🎨 Advanced Theme Studio (2-Layer System + Personal Persistence)**
+  - **Mode & Presets:** Light, Dark, and System sync with 4 quick presets (`Modern`, `Precision`, `Velvet`, `Obsidian`).
+  - **Color Palettes:** 8 Primary palettes (`Amber`, `Blue`, `Forest`, `Citrus`, `Violet`, `Rose`, `Teal`, `Zinc`) & 8 Surface palettes (`Default`, `Slate`, `Stone`, `Linen`, `Sand`, `Sage`, `Rosewood`, `Pure`) that dynamically theme cards, sidebars, and data tables.
+  - **Vietnamese-Ready Typography:** Local `Inter Variable` (Filament v5 default via `@fontsource-variable/inter`) plus `Geist Sans`, `Be Vietnam Pro`, `Plus Jakarta Sans`, `Manrope`, and `JetBrains Mono`.
+  - **Layout, Table & Surface Controls:** Sidebar variants/widths/collapsible modes, content width, border radius, font scale, sticky table headers, row density (`compact`, `normal`, `comfortable`), zebra striping, cell borders, card styles (`bordered`, `elevated`, `glass`), and reduced motion.
+  - **2-Layer Persistence:** Global default theme & branding live in the singleton `settings` table (`settings.theme_settings`); individual accounts inherit it until customized, with personal overrides saved to `users.theme_settings` and isolated per account in `localStorage`.
 - **📦 Built-in Enterprise Modules**
   - **Auth & Sessions:** JWT access tokens + rotating refresh tokens, device session tracking, logout-all.
   - **Users & RBAC:** User CRUD, role assignment, and interactive permission matrix.
+  - **System Settings (Singleton):** Manage global site title, description, logo, favicon (applied dynamically to header/login/document title), and default system theme.
   - **Media Manager:** Native PocketBase File Storage (local or S3), recursive folder tree, multi-file upload, search & preview.
   - **Real-time Notifications:** WebSocket hub (`/api/v1/notifications/ws`), PocketBase record hooks, and scheduled cleanup cron jobs.
   - **Audit Trail:** Query and filter system request logs directly from the Admin Portal.
-  - **Orders (Reference Module):** Blueprint demonstrating ACID transactions (`app.RunInTransaction`), RBAC guards, and real-time notifications.
 - **📱 Mobile-First Responsive Admin UI**
-  - Automatic responsive table-to-card view on mobile screens (`ResponsiveDataTable`), bilingual i18n (`vi` / `en`), and Command Palette (`⌘K` / `Ctrl+K`).
+  - Automatic responsive table-to-card view on mobile screens (`ResponsiveDataTable` with centered fit-width `actions` columns) and bilingual i18n (`vi` / `en`).
 - **🐳 Single-Binary & Docker Ready**
   - Compiles into a single standalone binary serving both the Go backend and the built `/admin/` SPA.
   - Multi-stage Dockerfile (`~40MB` Alpine image) with healthcheck (`/ready`), SQLite WAL persistence, and helper CLI commands.
@@ -92,6 +92,7 @@ A production-ready **BaaS + Dedicated Business Admin Portal** architecture that 
 │   ├── app/app.go              # Module registration, RBAC sync, custom CLI, /ready & /admin SPA
 │   ├── dev/seed.go             # Demo accounts & sample data (runs only with --dev)
 │   ├── platform/
+│   │   ├── config/             # Centralized pure-Go defaults (config.Get(): limits, TTL, seeds)
 │   │   ├── module/             # Module contract: {Name, Label, Permissions, Init, Routes}
 │   │   └── httpx/              # JSON response envelope (OK, Fail, Paged, ParsePage)
 │   └── modules/
@@ -100,13 +101,14 @@ A production-ready **BaaS + Dedicated Business Admin Portal** architecture that 
 │       ├── users/              # User management & role assignment
 │       ├── media/              # PocketBase file storage + nested folders
 │       ├── notifications/      # User/broadcast notifications + WebSocket hub + cron cleanup
-│       └── audit/              # System audit log reader
+│       ├── audit/              # System audit log reader
+│       └── settings/           # Singleton system settings (branding, logo/favicon, default theme)
 └── frontend-admin/             # React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui
     ├── src/
-    │   ├── components/layout/  # AppSidebar, PageShell, ResponsiveDataTable, CommandMenu
+    │   ├── components/layout/  # app-sidebar, PageShell, ResponsiveDataTable
     │   ├── components/ui/      # Radix UI / shadcn primitives
-    │   ├── features/           # Modular UI features (auth, users, rbac, media, theme, audit...)
-    │   ├── locales/            # i18n translations (Vietnamese & English)
+    │   ├── features/           # Modular UI features (auth, users, rbac, media, theme, settings, audit...)
+    │   ├── locales/            # i18n translations (vi.ts & en.ts)
     │   └── lib/                # API client, session manager, permissions helper
     └── vite.config.ts          # Builds static bundle into ../pb_public/admin/
 ```
