@@ -59,7 +59,7 @@ type DevConfig struct {
 var defaults = Config{
 	App: AppConfig{
 		AdminDir:        "./pb_public/admin",
-		FrontendModules: []string{"rbac", "users", "theme", "audit", "notifications", "media"},
+		FrontendModules: []string{"rbac", "users", "theme", "audit", "notifications", "media", "settings"},
 	},
 	Pagination: PaginationConfig{
 		DefaultLimit: 20,
@@ -69,7 +69,7 @@ var defaults = Config{
 	Audit: AuditConfig{
 		HiddenPaths: []string{"/notifications/stream", "/health", "/notifications/unread-count"},
 		Actions:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
-		Resources:   []string{"auth", "users", "roles", "permissions", "notifications", "audit-logs", "files", "system"},
+		Resources:   []string{"auth", "users", "roles", "permissions", "notifications", "audit-logs", "files", "settings", "system"},
 	},
 	Notifications: NotificationsConfig{
 		CleanupCron:          "0 3 * * *",

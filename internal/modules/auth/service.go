@@ -1,6 +1,7 @@
 package auth
 
 import (
+	encjson "encoding/json"
 	"errors"
 	"strings"
 
@@ -13,6 +14,7 @@ var (
 	ErrInvalidCredentials     = errors.New("Email hoặc mật khẩu không chính xác")
 	ErrInvalidPassword        = errors.New("Mật khẩu hiện tại không đúng")
 	ErrUsersCollectionMissing = errors.New("Collection users không tồn tại")
+	ErrInvalidThemeSettings   = errors.New("Cài đặt giao diện không đúng định dạng JSON")
 )
 
 type service struct {
@@ -86,7 +88,11 @@ func (s service) Me(user *core.Record) *rbac.UserDTO {
 }
 
 func (s service) SaveTheme(user *core.Record, themeSettings string) (*rbac.UserDTO, error) {
-	user.Set("theme_settings", themeSettings)
+	trimmed := strings.TrimSpace(themeSettings)
+	if trimmed != "" && !encjson.Valid([]byte(trimmed)) {
+		return nil, ErrInvalidThemeSettings
+	}
+	user.Set("theme_settings", trimmed)
 	if err := s.app.Save(user); err != nil {
 		return nil, err
 	}

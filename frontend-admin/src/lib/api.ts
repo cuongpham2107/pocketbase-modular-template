@@ -1,4 +1,4 @@
-import type { ApiResponse, AuditFilterOptions, AuditLog, AuthResponse, CoverageReport, MediaFolder, Notification, Permission, PermissionGroup, Role, UploadedFile, User } from '@/types'
+import type { ApiResponse, AuditFilterOptions, AuditLog, AuthResponse, CoverageReport, MediaFolder, Notification, Permission, PermissionGroup, Role, SiteSettings, UploadedFile, User } from '@/types'
 import {
   API_BASE,
   clearSession,
@@ -596,6 +596,33 @@ export const api = {
   async checkMobileVersion(platform: 'android' | 'ios', appVersion: string): Promise<Record<string, unknown>> {
     const res = await fetch(`${API_BASE}/api/mobile/v1/app/check-version?platform=${platform}&app_version=${appVersion}`)
     return res.json()
+  },
+
+  // System Settings (singleton)
+  async getPublicSettings(): Promise<SiteSettings> {
+    return request<SiteSettings>('/api/v1/settings/public', { skipRefresh: true })
+  },
+
+  async getSettings(): Promise<SiteSettings> {
+    return request<SiteSettings>('/api/v1/settings')
+  },
+
+  async updateSettings(
+    payload:
+      | FormData
+      | {
+          site_title?: string
+          site_description?: string
+          theme_settings?: string
+          remove_logo?: boolean
+          remove_favicon?: boolean
+        },
+  ): Promise<SiteSettings> {
+    const isForm = typeof FormData !== 'undefined' && payload instanceof FormData
+    return request<SiteSettings>('/api/v1/settings', {
+      method: 'PUT',
+      body: isForm ? payload : JSON.stringify(payload),
+    })
   },
 
   // MCP Tools

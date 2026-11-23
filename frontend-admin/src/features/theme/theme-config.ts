@@ -25,7 +25,7 @@ export type ContentWidth =
   | "7xl"
   | "6xl"
   | "5xl"
-export type FontFamily = "geist" | "inter" | "outfit" | "jakarta" | "figtree" | "mono"
+export type FontFamily = "inter" | "geist" | "vietnam" | "jakarta" | "manrope" | "mono"
 export type FontSize = "xs" | "sm" | "md" | "lg" | "xl"
 export type Density = "tight" | "normal" | "spacious"
 export type NavLayout = "sidebar-collapsible" | "sidebar-fixed" | "top"
@@ -307,12 +307,25 @@ export const RADIUS_VALUES: Record<BorderRadius, string> = {
 }
 
 export const FONT_DEFINITIONS: Record<FontFamily, { label: string; fontClass: string; cssFamily: string }> = {
+  inter: { label: "Inter (Filament)", fontClass: "font-sans", cssFamily: "'Inter Variable', -apple-system, sans-serif" },
   geist: { label: "Geist Sans", fontClass: "font-sans", cssFamily: "'Geist Variable', -apple-system, sans-serif" },
-  inter: { label: "Inter", fontClass: "font-sans", cssFamily: "'Inter', -apple-system, sans-serif" },
-  outfit: { label: "Outfit Display", fontClass: "font-sans", cssFamily: "'Outfit', sans-serif" },
-  jakarta: { label: "Plus Jakarta", fontClass: "font-sans", cssFamily: "'Plus Jakarta Sans', sans-serif" },
-  figtree: { label: "Figtree Modern", fontClass: "font-sans", cssFamily: "'Figtree', sans-serif" },
+  vietnam: { label: "Be Vietnam Pro", fontClass: "font-sans", cssFamily: "'Be Vietnam Pro', -apple-system, sans-serif" },
+  jakarta: { label: "Plus Jakarta Sans", fontClass: "font-sans", cssFamily: "'Plus Jakarta Sans', -apple-system, sans-serif" },
+  manrope: { label: "Manrope", fontClass: "font-sans", cssFamily: "'Manrope', -apple-system, sans-serif" },
   mono: { label: "JetBrains Mono", fontClass: "font-mono", cssFamily: "'JetBrains Mono', monospace" },
+}
+
+const LEGACY_FONT_MAP: Record<string, FontFamily> = {
+  outfit: "vietnam",
+  figtree: "manrope",
+}
+
+export function normalizeFontFamily(value: unknown, fallback: FontFamily = "inter"): FontFamily {
+  if (typeof value === "string") {
+    if (value in FONT_DEFINITIONS) return value as FontFamily
+    if (value in LEGACY_FONT_MAP) return LEGACY_FONT_MAP[value]
+  }
+  return fallback
 }
 
 export const FONT_SIZE_VALUES: Record<FontSize, { label: string; shortLabel: string; px: string; scale: number }> = {
@@ -352,7 +365,7 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   surface: "default",
   radius: "md",
   contentWidth: "7xl",
-  fontFamily: "geist",
+  fontFamily: "inter",
   fontSize: "md",
   density: "normal",
   navLayout: "sidebar-collapsible",
@@ -373,7 +386,7 @@ export const PRESET_DEFAULTS: Record<ThemePreset, Partial<ThemeSettings>> = {
     palette: "blue",
     surface: "default",
     radius: "md",
-    fontFamily: "geist",
+    fontFamily: "inter",
     density: "normal",
   },
   precision: {
@@ -389,7 +402,7 @@ export const PRESET_DEFAULTS: Record<ThemePreset, Partial<ThemeSettings>> = {
     palette: "violet",
     surface: "linen",
     radius: "xl",
-    fontFamily: "outfit",
+    fontFamily: "vietnam",
     density: "spacious",
   },
   obsidian: {

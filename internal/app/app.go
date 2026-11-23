@@ -15,6 +15,7 @@ import (
 	"cuongpham2107/pocketbase-custom/internal/modules/media"
 	"cuongpham2107/pocketbase-custom/internal/modules/notifications"
 	"cuongpham2107/pocketbase-custom/internal/modules/rbac"
+	"cuongpham2107/pocketbase-custom/internal/modules/settings"
 	"cuongpham2107/pocketbase-custom/internal/modules/users"
 	"cuongpham2107/pocketbase-custom/internal/platform/config"
 	"cuongpham2107/pocketbase-custom/internal/platform/httpx"
@@ -28,6 +29,7 @@ var features = []module.Module{
 	notifications.Module,
 	audit.Module,
 	media.Module,
+	settings.Module,
 }
 
 // Register binds all modules to the app. Migrations must already be registered (blank import in main).

@@ -12,6 +12,7 @@ import {
   Users,
   Bell,
   ScrollText,
+  Settings,
 } from "lucide-react"
 
 import {
@@ -38,7 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/permissions"
 import { useModules, type ModuleName } from "@/lib/modules"
-import type { User } from "@/types"
+import type { SiteSettings, User } from "@/types"
 
 interface NavItem {
   to: string
@@ -71,21 +72,24 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/gateway", labelKey: "nav.gateway", icon: Server },
       { to: "/notifications", labelKey: "nav.notifications", icon: Bell, module: "notifications" },
       { to: "/audit", labelKey: "nav.audit", icon: ScrollText, permission: "audit:view", module: "audit" },
+      { to: "/settings", labelKey: "nav.settings", icon: Settings, permission: "settings:view", module: "settings" },
     ],
   },
 ]
 
 const itemClass =
-  "font-medium text-xs rounded-xl transition-all group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-xs shadow-primary/20"
+  "font-medium text-xs rounded-xl transition-all group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center data-[active=true]:bg-muted data-[active=true]:hover:bg-muted data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:border-l data-[active=true]:border-primary data-[active=true]:rounded-l-none"
 
 export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   currentUser: User | null
+  siteSettings?: SiteSettings | null
   onLogout: () => void
   sidebarWidth?: string
 }
 
 export function AppSidebar({
   currentUser,
+  siteSettings,
   onLogout,
   sidebarWidth,
   collapsible = "icon",
@@ -133,11 +137,19 @@ export function AppSidebar({
             <TooltipTrigger asChild>
               <div
                 onClick={isCollapsed ? toggleSidebar : undefined}
-                className={`flex aspect-square size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 ${
+                className={`flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 ${
                   isCollapsed ? "cursor-pointer hover:scale-105 transition-transform" : ""
                 }`}
               >
-                <Layers className="size-4.5" />
+                {siteSettings?.logo_url ? (
+                  <img
+                    src={siteSettings.logo_url}
+                    alt={siteSettings.site_title || t("common.appName")}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <Layers className="size-4.5" />
+                )}
               </div>
             </TooltipTrigger>
             {isCollapsed && (
@@ -149,12 +161,14 @@ export function AppSidebar({
 
           <div className="flex flex-col gap-0.5 min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="flex items-center gap-1.5 font-bold tracking-tight text-foreground text-sm truncate">
-              <span>{t("common.appName")}</span>
+              <span>{siteSettings?.site_title || t("common.appName")}</span>
               <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono text-primary border-primary/30 shrink-0">
                 Shield
               </Badge>
             </div>
-            <span className="text-[11px] text-muted-foreground truncate">{t("common.appTagline")}</span>
+            <span className="text-[11px] text-muted-foreground truncate">
+              {siteSettings?.site_description || t("common.appTagline")}
+            </span>
           </div>
         </div>
       </SidebarHeader>

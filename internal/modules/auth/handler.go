@@ -79,6 +79,9 @@ func (h handler) saveTheme(e *core.RequestEvent) error {
 		return httpx.BadRequest(e)
 	}
 	dto, err := h.svc.SaveTheme(e.Auth, req.ThemeSettings)
+	if errors.Is(err, ErrInvalidThemeSettings) {
+		return httpx.Fail(e, 400, "VALIDATION_FAILED", err.Error())
+	}
 	if err != nil {
 		return httpx.Fail(e, 500, "INTERNAL_ERROR", "Không thể lưu cài đặt giao diện")
 	}

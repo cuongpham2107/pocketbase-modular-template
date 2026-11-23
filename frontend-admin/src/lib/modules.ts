@@ -1,7 +1,7 @@
 import * as React from "react"
 
 /** Tên module tuỳ chọn của backend (xem internal/app/modules.go). */
-export type ModuleName = "audit" | "notifications" | "media" | "mobile" | "mcp"
+export type ModuleName = "audit" | "notifications" | "media" | "settings" | "mobile" | "mcp"
 
 /**
  * - `null`: đang tải

@@ -103,6 +103,18 @@ export interface ApiResponse<T = unknown> {
 }
 
 /** Thông báo trong DB (module P7 backend). */
+export interface SiteSettings {
+  id: string | number
+  site_title: string
+  site_description: string
+  logo?: string
+  logo_url?: string
+  favicon?: string
+  favicon_url?: string
+  theme_settings?: string
+  updated_at?: string
+}
+
 export interface Notification {
   id: string | number
   user_id: string | number

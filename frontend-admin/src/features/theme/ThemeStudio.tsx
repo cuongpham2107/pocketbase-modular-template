@@ -10,6 +10,9 @@ import {
   Check,
   Sparkles,
   Copy,
+  CloudCheck,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +46,10 @@ export function ThemeStudio() {
     setIsOpen,
     toggleOpen,
     exportCss,
+    isAuthenticated,
+    hasUserOverride,
+    syncStatus,
+    saveToAccount,
   } = useThemeCustomizer()
 
   const [copied, setCopied] = React.useState(false)
@@ -113,7 +120,7 @@ export function ThemeStudio() {
                     size="icon"
                     className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
                     onClick={resetToDefault}
-                    title="Khôi phục mặc định"
+                    title="Về mặc định hệ thống"
                   >
                     <RotateCcw className="size-3.5" />
                   </Button>
@@ -819,8 +826,72 @@ export function ThemeStudio() {
                 </>
               )}
 
-              {/* Footer Actions: Copy CSS Variables */}
-              <div className="pt-2 border-t border-border/60">
+              {/* Footer Actions: Account Sync Status + Copy CSS Variables */}
+              <div className="pt-2 border-t border-border/60 space-y-2.5">
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px]">
+                  {isAuthenticated ? (
+                    <>
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        {syncStatus === "saving" && (
+                          <>
+                            <Loader2 className="size-3.5 animate-spin text-primary" />
+                            <span>Đang lưu vào tài khoản...</span>
+                          </>
+                        )}
+                        {syncStatus === "saved" && (
+                          <>
+                            <CloudCheck className="size-3.5 text-emerald-500" />
+                            <span className="text-foreground font-medium">
+                              {hasUserOverride
+                                ? "Đang dùng giao diện riêng của tài khoản"
+                                : "Đang dùng mặc định hệ thống"}
+                            </span>
+                          </>
+                        )}
+                        {syncStatus === "error" && (
+                          <>
+                            <AlertCircle className="size-3.5 text-destructive" />
+                            <span className="text-destructive font-medium">Lưu thất bại</span>
+                          </>
+                        )}
+                        {syncStatus === "idle" && (
+                          <>
+                            <CloudCheck className="size-3.5 text-muted-foreground" />
+                            <span>
+                              {hasUserOverride
+                                ? "Đang dùng giao diện riêng của tài khoản"
+                                : "Đang dùng mặc định hệ thống"}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {hasUserOverride && (
+                          <button
+                            type="button"
+                            onClick={resetToDefault}
+                            className="text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
+                          >
+                            Về mặc định
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void saveToAccount()}
+                          disabled={syncStatus === "saving"}
+                          className="font-semibold text-primary hover:underline disabled:opacity-50 cursor-pointer"
+                        >
+                          {syncStatus === "error" ? "Thử lại" : "Lưu ngay"}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Chế độ tạm thời — đăng nhập để lưu giao diện theo tài khoản.
+                    </span>
+                  )}
+                </div>
+
                 <Button
                   variant="outline"
                   size="sm"

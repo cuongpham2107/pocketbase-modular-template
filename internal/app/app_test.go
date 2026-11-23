@@ -145,7 +145,7 @@ func TestPermissionEnforcement(t *testing.T) {
 			URL:             "/api/v1/permissions/catalog",
 			Headers:         map[string]string{"Authorization": f.adminToken},
 			ExpectedStatus:  200,
-			ExpectedContent: []string{`"users:view"`, `"roles:manage"`, `"audit:view"`, `"media:upload"`},
+			ExpectedContent: []string{`"users:view"`, `"roles:manage"`, `"audit:view"`, `"media:upload"`, `"settings:update"`},
 		},
 	}
 
@@ -173,7 +173,7 @@ func TestNativeCollectionAPIIsLocked(t *testing.T) {
 			NotExpectedContent: []string{"rbac-admin@example.com"},
 		},
 	}
-	for _, col := range []string{"roles", "permissions", "media_folders", "media_files"} {
+	for _, col := range []string{"roles", "permissions", "media_folders", "media_files", "settings"} {
 		scenarios = append(scenarios, tests.ApiScenario{
 			Name:            "native " + col + " list is superuser-only",
 			Method:          http.MethodGet,

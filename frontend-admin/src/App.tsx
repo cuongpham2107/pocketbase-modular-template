@@ -34,6 +34,7 @@ import {
   LayoutDashboard,
   Bell,
   ScrollText,
+  Settings,
   ShieldAlert,
   Loader2,
 } from "lucide-react"
@@ -68,6 +69,9 @@ const NotificationsPage = React.lazy(() =>
 const AuditPage = React.lazy(() =>
   import("@/features/audit").then((m) => ({ default: m.AuditPage })),
 )
+const SettingsPage = React.lazy(() =>
+  import("@/features/settings").then((m) => ({ default: m.SettingsPage })),
+)
 import { ThemeStudio } from "@/features/theme"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { AnimateUIProvider } from "@animate-ui/react/provider"
@@ -79,7 +83,7 @@ import { usePermissions } from "@/lib/permissions"
 import { PermissionsProvider } from "@/lib/permissions-provider"
 import { useModules, type ModuleName } from "@/lib/modules"
 import { ModulesProvider } from "@/lib/modules-provider"
-import type { User } from "@/types"
+import type { SiteSettings, User } from "@/types"
 
 // Năm hiện tại cho footer — tính một lần lúc nạp module để render giữ tính thuần.
 const CURRENT_YEAR = new Date().getFullYear()
@@ -92,6 +96,7 @@ const VIEW_TITLES: Record<string, { titleKey: string; icon: React.ComponentType<
   "/gateway": { titleKey: "nav.gateway", icon: Server },
   "/notifications": { titleKey: "nav.notifications", icon: Bell },
   "/audit": { titleKey: "nav.audit", icon: ScrollText },
+  "/settings": { titleKey: "nav.settings", icon: Settings },
 }
 
 function currentView(pathname: string) {
@@ -160,6 +165,7 @@ function AppContent() {
   const navigate = useNavigate()
 
   const [currentUser, setCurrentUser] = React.useState<User | null>(() => api.getStoredUser())
+  const [siteSettings, setSiteSettings] = React.useState<SiteSettings | null>(null)
   // Luôn kiểm tra phiên qua refresh cookie khi tải trang (access token chỉ ở memory).
   const [isAuthChecking, setIsAuthChecking] = React.useState<boolean>(true)
   const [guestMode, setGuestMode] = React.useState<boolean>(() => isGuest())
@@ -167,6 +173,60 @@ function AppContent() {
   const [backendStatus, setBackendStatus] = React.useState<
     "online" | "offline" | "checking"
   >("checking")
+
+  // Load global singleton settings (branding + system default theme) & sync browser title/favicon/meta
+  React.useEffect(() => {
+    let active = true
+    api
+      .getPublicSettings()
+      .then((dto) => {
+        if (!active) return
+        setSiteSettings(dto)
+        window.dispatchEvent(
+          new CustomEvent("theme:system-sync", { detail: dto.theme_settings ?? "" }),
+        )
+      })
+      .catch(() => {})
+
+    const handleSettingsUpdated = (e: Event) => {
+      const updated = (e as CustomEvent<SiteSettings | undefined>).detail
+      if (updated) {
+        setSiteSettings(updated)
+      }
+    }
+    window.addEventListener("site:settings-updated", handleSettingsUpdated)
+    return () => {
+      active = false
+      window.removeEventListener("site:settings-updated", handleSettingsUpdated)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    const title = siteSettings?.site_title?.trim() || t("common.appName")
+    const viewTitle = currentUser || guestMode ? t(currentView(location.pathname).titleKey) : ""
+    document.title = viewTitle ? `${viewTitle} — ${title}` : title
+
+    if (siteSettings?.site_description !== undefined) {
+      let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
+      if (!meta) {
+        meta = document.createElement("meta")
+        meta.name = "description"
+        document.head.appendChild(meta)
+      }
+      meta.content = siteSettings.site_description
+    }
+
+    const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null
+    if (link) {
+      if (siteSettings?.favicon_url) {
+        link.type = ""
+        link.href = siteSettings.favicon_url
+      } else {
+        link.type = "image/svg+xml"
+        link.href = `${import.meta.env.BASE_URL}favicon.svg`
+      }
+    }
+  }, [siteSettings, location.pathname, currentUser, guestMode, t])
 
   // Check backend health & khôi phục phiên từ refresh cookie
   React.useEffect(() => {
@@ -181,13 +241,17 @@ function AppContent() {
       setCurrentUser(null)
       setGuestMode(false)
       setGuest(false)
+      window.dispatchEvent(new CustomEvent("theme:user-logout"))
     }
     window.addEventListener("auth:unauthorized", handleUnauthorized)
 
     api
       .bootstrap()
       .then((user) => {
-        if (!user) return
+        if (!user) {
+          window.dispatchEvent(new CustomEvent("theme:user-logout"))
+          return
+        }
         setCurrentUser(user)
         setGuestMode(false)
         window.dispatchEvent(new CustomEvent("theme:user-sync", { detail: user }))
@@ -205,6 +269,7 @@ function AppContent() {
       setCurrentUser(null)
       setGuestMode(false)
       setGuest(false)
+      window.dispatchEvent(new CustomEvent("theme:user-logout"))
       navigate("/", { replace: true })
     })
   }
@@ -232,12 +297,24 @@ function AppContent() {
           {/* Header Bar */}
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25">
-                <Layers className="size-5" />
+              <div className="flex size-9 items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25">
+                {siteSettings?.logo_url ? (
+                  <img
+                    src={siteSettings.logo_url}
+                    alt={siteSettings.site_title || t("common.appName")}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <Layers className="size-5" />
+                )}
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-sm tracking-tight text-foreground">{t("common.appName")}</span>
-                <span className="text-[11px] text-muted-foreground font-medium">Enterprise Admin Panel</span>
+                <span className="font-bold text-sm tracking-tight text-foreground">
+                  {siteSettings?.site_title || t("common.appName")}
+                </span>
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  {siteSettings?.site_description || "Enterprise Admin Panel"}
+                </span>
               </div>
             </div>
 
@@ -397,6 +474,7 @@ function AppContent() {
           {/* Left Navigation */}
           <AppSidebar
             currentUser={currentUser}
+            siteSettings={siteSettings}
             onLogout={handleLogout}
             variant={settings.sidebarVariant || "sidebar"}
             collapsible={settings.sidebarCollapsible || "icon"}
@@ -425,7 +503,7 @@ function AppContent() {
                       className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
                     >
                       <Layers className="h-3.5 w-3.5 text-primary" />
-                      <span>{t("common.appName")}</span>
+                      <span>{siteSettings?.site_title || t("common.appName")}</span>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
@@ -573,6 +651,16 @@ function AppContent() {
                     <RequireModule name="audit">
                       <RequirePermission code="audit:view">
                         <AuditPage />
+                      </RequirePermission>
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <RequireModule name="settings">
+                      <RequirePermission code="settings:view">
+                        <SettingsPage />
                       </RequirePermission>
                     </RequireModule>
                   }

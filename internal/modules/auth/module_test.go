@@ -157,6 +157,23 @@ func TestAuthRoutes(t *testing.T) {
 			Body:            json(`{"theme_settings":"{\"mode\":\"dark\"}"}`),
 			ExpectedStatus:  200,
 			ExpectedContent: []string{`"theme_settings":"{\"mode\":\"dark\"}"`},
+			AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
+				u, err := app.FindAuthRecordByEmail("users", testEmail)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got := u.GetString("theme_settings"); got != `{"mode":"dark"}` {
+					t.Fatalf("stored theme_settings = %q, want {\"mode\":\"dark\"}", got)
+				}
+			},
+		},
+		{
+			Name:            "theme settings reject invalid json",
+			Method:          http.MethodPut,
+			URL:             "/api/v1/auth/settings/theme",
+			Body:            json(`{"theme_settings":"{not-json"}`),
+			ExpectedStatus:  400,
+			ExpectedContent: []string{`"VALIDATION_FAILED"`},
 		},
 		{
 			Name:            "change password rejects a wrong current password",
